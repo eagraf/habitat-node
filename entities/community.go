@@ -9,4 +9,5 @@ type Community struct {
 	Name    string      `json:"name"`
 	Members []UserID    `json:"members"`
 	Peers   []Peer      `json:"peers"`
+	Backnet Backnet     `json:"backnet"`
 }
