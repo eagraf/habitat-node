@@ -10,4 +10,5 @@ type Community struct {
 	Members []UserID    `json:"members"`
 	Peers   []Peer      `json:"peers"`
 	Backnet Backnet     `json:"backnet"`
+	Apps    []AppID     `json:"apps"`
 }
