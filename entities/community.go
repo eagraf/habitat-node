@@ -8,4 +8,5 @@ type Community struct {
 	ID      CommunityID `json:"id"`
 	Name    string      `json:"name"`
 	Members []UserID    `json:"members"`
+	Peers   []Peer      `json:"peers"`
 }
