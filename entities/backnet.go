@@ -15,3 +15,10 @@ type Backnet struct {
 	Type      BacknetType `json:"type"`
 	Bootstrap []string    `json:"bootstrap"`
 }
+
+func InitBacknet(backnetType BacknetType) *Backnet {
+	return &Backnet{
+		Type:      backnetType,
+		Bootstrap: make([]string, 0),
+	}
+}
