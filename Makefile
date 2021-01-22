@@ -9,10 +9,13 @@ build : clean
 clean :
 	go clean -testcache
 	rm -rf $(BIN_DIR)
+	rm -rf $(WORK_DIR)
 
 test : clean build
 	go test -short ./...
 
 run : build
+	mkdir -p $(WORK_DIR)/ipfs
+	rm -rf $(IPFS_DIR)
 	$(BIN_DIR)/orchestrator
 
