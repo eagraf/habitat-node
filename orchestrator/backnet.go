@@ -8,17 +8,18 @@ import (
 	"path/filepath"
 
 	"github.com/eagraf/habitat-node/entities"
+	"golang.org/x/net/context"
 )
 
 type Backnet interface {
-	StartProcess(backnet *entities.Backnet) (chan error, error)
+	StartProcess(backnet *entities.Backnet) (*process, error)
 }
 
 type IPFSBacknet struct {
 	backnet entities.Backnet
 }
 
-func (ib *IPFSBacknet) StartProcess(communityID entities.CommunityID) (chan error, error) {
+func (ib *IPFSBacknet) StartProcess(communityID entities.CommunityID) (*process, error) {
 	if ib.backnet.Type != entities.IPFS {
 		return nil, errors.New("backnet should be of type IPFS")
 	}
@@ -35,7 +36,8 @@ func (ib *IPFSBacknet) StartProcess(communityID entities.CommunityID) (chan erro
 	}
 
 	// Run ipfs init
-	cmd := exec.Command("ipfs", "init")
+	ctx, cancel := context.WithCancel(context.Background())
+	cmd := exec.CommandContext(ctx, "ipfs", "init")
 	cmd.Env = env
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -50,6 +52,14 @@ func (ib *IPFSBacknet) StartProcess(communityID entities.CommunityID) (chan erro
 
 	errChan := make(chan error)
 
+	process := &process{
+		communityID: communityID,
+		processType: processTypeBacknet,
+		context:     ctx,
+		cancel:      cancel,
+		errChan:     errChan,
+	}
+
 	// Start ipfs daemon
 	go func(errChan chan error) {
 		cmd = exec.Command("ipfs", "daemon")
@@ -62,5 +72,5 @@ func (ib *IPFSBacknet) StartProcess(communityID entities.CommunityID) (chan erro
 		}
 	}(errChan)
 
-	return errChan, nil
+	return process, nil
 }
