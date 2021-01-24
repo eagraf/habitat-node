@@ -19,13 +19,43 @@ type IPFSBacknet struct {
 	communityID entities.CommunityID
 	backnet     entities.Backnet
 	process     process
+
+	ipfsDir    string
+	configPath string
+	config     *IPFSConfig
 }
 
-func InitIPFSBacknet(community *entities.Community) *IPFSBacknet {
+func InitIPFSBacknet(community *entities.Community, swarmPort, apiPort, gatewayPort int) (*IPFSBacknet, error) {
+	// Make ipfs dir
+	ipfsDir := filepath.Join(os.Getenv("IPFS_DIR"), string(community.ID))
+	err := os.MkdirAll(ipfsDir, 0700)
+	if err != nil {
+		return nil, err
+	}
+
+	configDir := filepath.Join(os.Getenv("CONFIG_DIR"), string(community.ID))
+	err = os.MkdirAll(configDir, 0700)
+	if err != nil {
+		return nil, err
+	}
+
+	builder, err := NewIPFSConfigBuilder()
+	if err != nil {
+		return nil, err
+	}
+
+	configPath := filepath.Join(configDir, "ipfs_config.json")
+	builder.SetAddresses(swarmPort, apiPort, gatewayPort)
+	config := builder.Config()
+	config.WriteConfig(configPath)
+
 	return &IPFSBacknet{
 		communityID: community.ID,
 		backnet:     community.Backnet,
-	}
+		ipfsDir:     ipfsDir,
+		configPath:  configPath,
+		config:      config,
+	}, nil
 }
 
 func (ib *IPFSBacknet) StartProcess() (*process, error) {
@@ -33,24 +63,17 @@ func (ib *IPFSBacknet) StartProcess() (*process, error) {
 		return nil, errors.New("backnet should be of type IPFS")
 	}
 
-	// Make ipfs dir
-	ipfsDir := filepath.Join(os.Getenv("IPFS_DIR"), string(ib.communityID))
-	err := os.MkdirAll(ipfsDir, 0700)
-	if err != nil {
-		return nil, err
-	}
-
 	env := []string{
-		fmt.Sprintf("IPFS_PATH=%s", ipfsDir),
+		fmt.Sprintf("IPFS_PATH=%s", ib.ipfsDir),
 	}
 
 	// Run ipfs init
 	ctx, cancel := context.WithCancel(context.Background())
-	cmd := exec.CommandContext(ctx, "ipfs", "init")
+	cmd := exec.CommandContext(ctx, "ipfs", "init", ib.configPath)
 	cmd.Env = env
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err = cmd.Start()
+	//cmd.Stdout = os.Stdout
+	//cmd.Stderr = os.Stderr
+	err := cmd.Start()
 	if err != nil {
 		return nil, err
 	}
@@ -73,8 +96,8 @@ func (ib *IPFSBacknet) StartProcess() (*process, error) {
 	go func(errChan chan error) {
 		cmd = exec.Command("ipfs", "daemon")
 		cmd.Env = env
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
+		//cmd.Stdout = os.Stdout
+		//cmd.Stderr = os.Stderr
 		err = cmd.Start()
 		if err != nil {
 			errChan <- err

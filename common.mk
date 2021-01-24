@@ -5,3 +5,4 @@ export WORK_DIR := $(MKFILE_PATH)work
 
 export STATE_DIR := $(WORK_DIR)/state
 export IPFS_DIR := $(WORK_DIR)/ipfs
+export CONFIG_DIR := $(WORK_DIR)/config
