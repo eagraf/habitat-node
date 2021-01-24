@@ -19,6 +19,12 @@ func main() {
 					Type: entities.IPFS,
 				},
 			},
+			entities.CommunityID("community_1"): {
+				ID: entities.CommunityID("community_1"),
+				Backnet: entities.Backnet{
+					Type: entities.IPFS,
+				},
+			},
 		},
 	}
 

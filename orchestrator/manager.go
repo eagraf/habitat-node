@@ -12,6 +12,13 @@ type processManager struct {
 	processes map[processID]struct{}
 	apps      map[processID]process
 	backnets  map[processID]process
+	errChan   chan processError
+}
+
+type processError struct {
+	processID   processID
+	communityID entities.CommunityID
+	err         error
 }
 
 func initManager() *processManager {
@@ -19,10 +26,12 @@ func initManager() *processManager {
 		processes: make(map[processID]struct{}),
 		apps:      make(map[processID]process),
 		backnets:  make(map[processID]process),
+		errChan:   make(chan processError),
 	}
 }
 
 func (pm *processManager) start(state *entities.State) error {
+	go pm.errorListener()
 	for _, community := range state.Communities {
 		var backnet Backnet
 		switch community.Backnet.Type {
@@ -41,9 +50,29 @@ func (pm *processManager) start(state *entities.State) error {
 			}
 			process.ID = processID(uuid.New().String())
 			pm.backnets[process.ID] = *process
+
 			log.Info().Msgf("starting %s process for community %s %s", process.processType, process.communityID, process.ID)
+			go pm.processErrorListener(process)
 		}()
 	}
 
 	return nil
+}
+
+func (pm *processManager) errorListener() {
+	for {
+		pErr := <-pm.errChan
+		log.Err(pErr.err).Msgf("process: %s, community: %s", pErr.processID, pErr.communityID)
+	}
+}
+
+func (pm *processManager) processErrorListener(process *process) {
+	for {
+		err := <-process.errChan
+		pm.errChan <- processError{
+			processID:   process.ID,
+			communityID: process.communityID,
+			err:         err,
+		}
+	}
 }
