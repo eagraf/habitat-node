@@ -12,20 +12,29 @@ import (
 )
 
 type Backnet interface {
-	StartProcess(backnet *entities.Backnet) (*process, error)
+	StartProcess() (*process, error)
 }
 
 type IPFSBacknet struct {
-	backnet entities.Backnet
+	communityID entities.CommunityID
+	backnet     entities.Backnet
+	process     process
 }
 
-func (ib *IPFSBacknet) StartProcess(communityID entities.CommunityID) (*process, error) {
+func InitIPFSBacknet(community *entities.Community) *IPFSBacknet {
+	return &IPFSBacknet{
+		communityID: community.ID,
+		backnet:     community.Backnet,
+	}
+}
+
+func (ib *IPFSBacknet) StartProcess() (*process, error) {
 	if ib.backnet.Type != entities.IPFS {
 		return nil, errors.New("backnet should be of type IPFS")
 	}
 
 	// Make ipfs dir
-	ipfsDir := filepath.Join(os.Getenv("IPFS_DIR"), string(communityID))
+	ipfsDir := filepath.Join(os.Getenv("IPFS_DIR"), string(ib.communityID))
 	err := os.MkdirAll(ipfsDir, 0700)
 	if err != nil {
 		return nil, err
@@ -52,8 +61,8 @@ func (ib *IPFSBacknet) StartProcess(communityID entities.CommunityID) (*process,
 
 	errChan := make(chan error)
 
-	process := &process{
-		communityID: communityID,
+	ib.process = process{
+		communityID: ib.communityID,
 		processType: processTypeBacknet,
 		context:     ctx,
 		cancel:      cancel,
@@ -70,7 +79,11 @@ func (ib *IPFSBacknet) StartProcess(communityID entities.CommunityID) (*process,
 		if err != nil {
 			errChan <- err
 		}
+		err = cmd.Wait()
+		if err != nil {
+			errChan <- err
+		}
 	}(errChan)
 
-	return process, nil
+	return &ib.process, nil
 }

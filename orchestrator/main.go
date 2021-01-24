@@ -11,13 +11,19 @@ func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	log.Info().Msg("orchestrator starting")
 
-	backnet := entities.InitBacknet(entities.IPFS)
-	process := IPFSBacknet{
-		backnet: *backnet,
+	state := &entities.State{
+		Communities: map[entities.CommunityID]entities.Community{
+			entities.CommunityID("community_0"): {
+				ID: entities.CommunityID("community_0"),
+				Backnet: entities.Backnet{
+					Type: entities.IPFS,
+				},
+			},
+		},
 	}
 
-	_, err := process.StartProcess("community_0")
-	if err != nil {
-		log.Panic().Msg(err.Error())
-	}
+	m := initManager()
+	m.start(state)
+
+	select {}
 }
