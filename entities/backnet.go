@@ -1,7 +1,5 @@
 package entities
 
-import "fmt"
-
 // BacknetType enumerates types of backnets
 type BacknetType string
 
@@ -18,8 +16,10 @@ type Backnet struct {
 	Bootstrap []string    `json:"bootstrap"`
 }
 
+// InitBacknet initializes a backnet
 func InitBacknet(backnetType BacknetType) *Backnet {
 	return &Backnet{
 		Type:      backnetType,
 		Bootstrap: make([]string, 0),
 	}
+}
