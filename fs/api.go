@@ -15,7 +15,7 @@ import (
 // TODO: move to somewhere else?
 type Session struct {
 	CommunityID entities.CommunityID
-	User        *entities.User
+	User        *client.User
 }
 
 // Permission is either
@@ -46,21 +46,22 @@ type FileMetadata struct {
 	lastEdit    string
 }
 
-// AuthService is client.AuthService renamed
-type AuthService client.AuthService
-
 // FilesystemService just needs authService for now
 type FilesystemService struct {
-	authService *AuthService
+	authService *client.AuthService
 	state       *entities.State
 	// i want this to be the receiver, not auth service, although that might be all we need (for now)
+	nets map[entities.CommunityID]Backnet
 }
 
 // NewFilesystemService initializes the FS service given an auth service
-func NewFilesystemService(as *AuthService, s *entities.State) (*FilesystemService, error) {
+func NewFilesystemService(as *client.AuthService, s *entities.State, n map[entities.CommunityID]Backnet) (*FilesystemService, error) {
 
-	res := &FilesystemService{authService: as,
-		state: s}
+	res := &FilesystemService{
+		authService: as,
+		state:       s,
+		nets:        n,
+	}
 	return res, nil
 
 }
@@ -69,7 +70,7 @@ func NewFilesystemService(as *AuthService, s *entities.State) (*FilesystemServic
 
 // AuthenticateSessionToken takes in a token and returns the user
 // maybe return a session?
-func (fs *FilesystemService) AuthenticateSessionToken(token string) (*entities.User, error) {
+func (fs *FilesystemService) AuthenticateSessionToken(token string) (*client.User, error) {
 	// check token db to see if it exists - if so return user
 	user, err := fs.authService.CheckToken(token)
 	if err != nil {
@@ -81,7 +82,7 @@ func (fs *FilesystemService) AuthenticateSessionToken(token string) (*entities.U
 
 // CheckPermissions checks permissions given a user, community and path
 // TODO: fix; just returns true for now
-func CheckPermissions(userid *entities.User, groupID entities.CommunityID, path string) (bool, error) {
+func CheckPermissions(userid *client.User, groupID entities.CommunityID, path string) (bool, error) {
 	return true, nil
 }
 
@@ -154,6 +155,19 @@ func CommunityFromID(state *entities.State, comm entities.CommunityID) *entities
 	return nil
 }
 
+func (fs *FilesystemService) backnetFromCommID(sessID entities.CommunityID) (Backnet, error) {
+	var net Backnet
+	for id, backnet := range fs.nets {
+		if id == sessID {
+			net = backnet
+		}
+	}
+	if net == nil {
+		return net, errors.New("this community id has no backnet")
+	}
+	return net, nil
+}
+
 // ParseListFiles prints out the list of files and returns
 func (fs *FilesystemService) ParseListFiles(w http.ResponseWriter, r *http.Request) {
 
@@ -166,21 +180,17 @@ func (fs *FilesystemService) ParseListFiles(w http.ResponseWriter, r *http.Reque
 	}
 
 	// how to get community backnet from user
-
-	net := CommunityFromID(fs.state, session.CommunityID).Backnet
-	res := ""
-
-	switch net.Type {
-	case entities.IPFS:
-		res, err = net.ListFiles(filepath)
-	}
-
+	net, err := fs.backnetFromCommID(session.CommunityID)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	// do something with res
-	fmt.Println(res)
+	err = net.ListFiles(filepath)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 }
