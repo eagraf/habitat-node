@@ -61,9 +61,14 @@ func (pm *processManager) start(state *entities.State) error {
 			log.Err(fmt.Errorf("backnet type %s is not supported", community.Backnet.Type)).Msg("")
 		}
 		go func(pid processID, community entities.Community) {
+			err := backnet.Configure(&community.Backnet)
+			if err != nil {
+				log.Err(fmt.Errorf("error configuring %s process for community %s: %s", community.Backnet.Type, community.ID, err.Error())).Msg("")
+				return
+			}
 			process, err := backnet.StartProcess()
 			if err != nil {
-				log.Err(fmt.Errorf("error starting %s process for community %s", community.Backnet.Type, community.ID))
+				log.Err(fmt.Errorf("error starting %s process for community %s: %s", community.Backnet.Type, community.ID, err.Error())).Msg("")
 				return
 			}
 			process.ID = pid

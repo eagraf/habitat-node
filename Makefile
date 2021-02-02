@@ -15,7 +15,7 @@ test : clean build
 	go test -short ./...
 
 run : build
-	mkdir -p $(WORK_DIR)/ipfs
 	rm -rf $(IPFS_DIR)
+	mkdir -p $(WORK_DIR)/ipfs
 	$(BIN_DIR)/orchestrator
 
