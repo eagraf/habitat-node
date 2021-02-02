@@ -17,12 +17,26 @@ func main() {
 				ID: entities.CommunityID("community_0"),
 				Backnet: entities.Backnet{
 					Type: entities.IPFS,
+					Local: entities.LocalBacknetConfig{
+						PortMap: map[string]int{
+							"swarm":   4001,
+							"api":     4002,
+							"gateway": 4003,
+						},
+					},
 				},
 			},
 			entities.CommunityID("community_1"): {
 				ID: entities.CommunityID("community_1"),
 				Backnet: entities.Backnet{
 					Type: entities.IPFS,
+					Local: entities.LocalBacknetConfig{
+						PortMap: map[string]int{
+							"swarm":   4004,
+							"api":     4005,
+							"gateway": 4006,
+						},
+					},
 				},
 			},
 		},
