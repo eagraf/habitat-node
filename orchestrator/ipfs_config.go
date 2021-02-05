@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 
 	config "github.com/ipfs/go-ipfs-config"
+	"github.com/mitchellh/mapstructure"
 )
 
 // IPFSConfig type allows us to attach our own methods to github.com/ipfs/go-ipfs-config config type
@@ -14,8 +15,24 @@ type IPFSConfig config.Config
 
 // WriteConfig will write the config (pretty printed json) into specified file
 func (c *IPFSConfig) WriteConfig(path string) error {
+
+	// Convert config to map
+	var mapped map[string]interface{}
+	err := mapstructure.Decode(c, &mapped)
+	if err != nil {
+		return err
+	}
+
+	// Remove PrivKey
+	if _, ok := mapped["Identity"]; ok {
+		identity := mapped["Identity"].(map[string]interface{})
+		if key, ok := identity["PrivKey"]; ok && key == "" {
+			delete(identity, "PrivKey")
+		}
+	}
+
 	// Marshal JSON indented
-	buf, err := json.MarshalIndent(c, "", "    ")
+	buf, err := json.MarshalIndent(mapped, "", "    ")
 	if err != nil {
 		return err
 	}
@@ -27,7 +44,6 @@ func (c *IPFSConfig) WriteConfig(path string) error {
 	}
 
 	return nil
-
 }
 
 // IPFSConfigBuilder allows for easy configuration of IPFS instances
@@ -46,6 +62,26 @@ func NewIPFSConfigBuilder() (*IPFSConfigBuilder, error) {
 
 	return &IPFSConfigBuilder{
 		configuration: &cast,
+	}, nil
+}
+
+// NewIPFSConfigBuilderFromFile scans an existing config, and allows for changes to be made to it
+func NewIPFSConfigBuilderFromFile(configPath string) (*IPFSConfigBuilder, error) {
+	var config IPFSConfig
+	buf, err := ioutil.ReadFile(configPath)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(buf, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	// Remove private key
+	config.Identity.PrivKey = ""
+
+	return &IPFSConfigBuilder{
+		configuration: &config,
 	}, nil
 }
 
