@@ -19,6 +19,11 @@ type Transition interface {
 	// TODO we might need to implement rollbacks as well
 }
 
+// TransitionSubscriber receives state transitions from a state monitoring process
+type TransitionSubscriber interface {
+	Receive(transition Transition) error
+}
+
 // Host transitions are initiated by a user on the host node
 
 type AddCommunityTransition struct {
