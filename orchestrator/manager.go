@@ -43,39 +43,12 @@ func initManager() *processManager {
 func (pm *processManager) start(state *entities.State) error {
 	go pm.errorListener()
 	for _, community := range state.Communities {
-		pid := processID(uuid.New().String())
-		log.Info().Msgf("starting backnet process for community %s %s", community.ID, pid)
-		var backnet Backnet
-		switch community.Backnet.Type {
-		case entities.IPFS:
-			myBacknet, err := InitIPFSBacknet(&community)
-			if err != nil {
-				log.Err(err).Msg("error initializing backnet")
-			}
-			backnet = myBacknet
-		case entities.DAT:
-			fallthrough
-		default:
-			log.Err(fmt.Errorf("backnet type %s is not supported", community.Backnet.Type)).Msg("")
-		}
-		go func(pid processID, community entities.Community) {
-			err := backnet.Configure(&community.Backnet)
-			if err != nil {
-				log.Err(fmt.Errorf("error configuring %s process for community %s: %s", community.Backnet.Type, community.ID, err.Error())).Msg("")
-				return
-			}
-			process, err := backnet.StartProcess()
+		go func(community entities.Community) {
+			err := pm.startBacknet(&community)
 			if err != nil {
 				log.Err(fmt.Errorf("error starting %s process for community %s: %s", community.Backnet.Type, community.ID, err.Error())).Msg("")
-				return
 			}
-			process.ID = pid
-			pm.backnets[process.ID] = *process
-			pm.processes[process.ID] = struct{}{}
-
-			go pm.processErrorListener(process)
-			log.Info().Msgf("process %s started", process.ID)
-		}(pid, community)
+		}(community)
 	}
 
 	return nil
@@ -97,4 +70,39 @@ func (pm *processManager) processErrorListener(process *process) {
 			err:         err,
 		}
 	}
+}
+
+func (pm *processManager) startBacknet(community *entities.Community) error {
+	var backnet Backnet
+	pid := processID(uuid.New().String())
+
+	switch community.Backnet.Type {
+	case entities.IPFS:
+		myBacknet, err := InitIPFSBacknet(community)
+		if err != nil {
+			log.Err(err).Msg("error initializing backnet")
+		}
+		backnet = myBacknet
+	case entities.DAT:
+		fallthrough
+	default:
+		log.Err(fmt.Errorf("backnet type %s is not supported", community.Backnet.Type)).Msg("")
+	}
+
+	err := backnet.Configure(&community.Backnet)
+	if err != nil {
+		return err
+	}
+	process, err := backnet.StartProcess()
+	if err != nil {
+		return err
+	}
+	process.ID = pid
+	pm.backnets[process.ID] = *process
+	pm.processes[process.ID] = struct{}{}
+
+	go pm.processErrorListener(process)
+	log.Info().Msgf("process %s started", process.ID)
+
+	return nil
 }
