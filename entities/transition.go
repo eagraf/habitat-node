@@ -11,6 +11,20 @@ const (
 	AddMemberTransitionType    TransitionType = "ADD_MEMBER"
 )
 
+// TransitionSubscriptionCategory enumerates different types entities that a TransitionSubscriber could be subscribed to
+type TransitionSubscriptionCategory string
+
+// All possible TransitionSubscriptionCategories
+const (
+	CommunityCategory TransitionSubscriptionCategory = "COMMUNITY"
+	HostUserCategory  TransitionSubscriptionCategory = "HOST_USER"
+)
+
+var transitionSubscriptionCategories = map[TransitionType]TransitionSubscriptionCategory{
+	AddCommunityTransitionType: CommunityCategory,
+	AddMemberTransitionType:    CommunityCategory,
+}
+
 // A Transition transitions the state from one arrangement to another
 // Each state transition is implemented via a reducer function
 type Transition interface {
@@ -19,9 +33,30 @@ type Transition interface {
 	// TODO we might need to implement rollbacks as well
 }
 
+// CommunityTransition is a transition to a community element in state
+type CommunityTransition interface {
+	Transition
+	CommunityID() CommunityID
+}
+
+// HostUserTransition is a transition to a host user element in state
+type HostUserTransition interface {
+	Transition
+	HostUsername() string
+}
+
 // TransitionSubscriber receives state transitions from a state monitoring process
 type TransitionSubscriber interface {
 	Receive(transition Transition) error
+}
+
+// GetSubscriptionCategory returns the subscription category for a given transition type
+func GetSubscriptionCategory(transitionType TransitionType) (TransitionSubscriptionCategory, error) {
+	category, ok := transitionSubscriptionCategories[transitionType]
+	if !ok {
+		return "", fmt.Errorf("transition type %s not supported", string(transitionType))
+	}
+	return category, nil
 }
 
 // Host transitions are initiated by a user on the host node
@@ -41,6 +76,10 @@ func (ac AddCommunityTransition) Reduce(state *State) (*State, error) {
 	}
 	newState.Communities[ac.Community.ID] = ac.Community
 	return &newState, nil
+}
+
+func (ac AddCommunityTransition) CommunityID() CommunityID {
+	return ac.Community.ID
 }
 
 // Within community transitions are agreed upon by consensus between community member nodes
@@ -64,4 +103,8 @@ func (am AddMemberTransition) Reduce(state *State) (*State, error) {
 	}
 	newState.Communities[am.Community].Members[am.User.ID] = am.User
 	return &newState, nil
+}
+
+func (am AddMemberTransition) CommunityID() CommunityID {
+	return am.Community
 }
