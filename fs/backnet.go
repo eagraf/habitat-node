@@ -26,7 +26,7 @@ type Backnet interface {
 
 	ListFiles(string) error
 	Remove(string, bool) error // bool = indicator of directory or file
-	Cat(string) (bytes.Buffer, error)
+	Cat(string) ([]byte, error)
 	Write(string, *os.File) error
 	Move(string, string) error
 	Copy(string, string) error
@@ -39,6 +39,15 @@ type IPFSBacknet struct {
 	backnet     entities.Backnet
 
 	api string
+}
+
+// InitIPFSBacknet creates a filesystem-specific IPFS backnet
+func InitIPFSBacknet(id entities.CommunityID, net entities.Backnet, port string) *IPFSBacknet {
+	return &IPFSBacknet{
+		communityID: id,
+		backnet:     net,
+		api:         port,
+	}
 }
 
 // IPFSAPICall makes an HTTP API call and returns a string with the plain text

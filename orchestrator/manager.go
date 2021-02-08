@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/eagraf/habitat-node/client"
 	"github.com/eagraf/habitat-node/entities"
+	"github.com/eagraf/habitat-node/fs"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
@@ -13,6 +15,8 @@ type processManager struct {
 	processes map[processID]struct{}
 	apps      map[processID]process
 	backnets  map[processID]process
+	fs        processID
+	auth      processID
 	errChan   chan processError
 
 	portMutex  sync.Mutex
@@ -32,6 +36,8 @@ func initManager() *processManager {
 		processes:  make(map[processID]struct{}),
 		apps:       make(map[processID]process),
 		backnets:   make(map[processID]process),
+		fs:         "",
+		auth:       "",
 		errChan:    make(chan processError),
 		portMutex:  sync.Mutex{},
 		portAllocs: make(map[int]processID),
@@ -42,7 +48,12 @@ func initManager() *processManager {
 
 func (pm *processManager) start(state *entities.State) error {
 	go pm.errorListener()
+
+	nets := make(map[entities.CommunityID]entities.Backnet)
+	apiports := make(map[entities.CommunityID]string)
+
 	for _, community := range state.Communities {
+		nets[community.ID] = community.Backnet
 		pid := processID(uuid.New().String())
 		log.Info().Msgf("starting backnet process for community %s %s", community.ID, pid)
 		var backnet Backnet
@@ -54,6 +65,7 @@ func (pm *processManager) start(state *entities.State) error {
 				log.Err(err).Msg("error initializing backnet")
 			}
 			backnet = myBacknet
+			apiports[community.ID] = myBacknet.config.Addresses.API[0]
 			log.Info().Msgf("swarm port: %d, api port: %d, gateway port: %d", ports[0], ports[1], ports[2])
 		case entities.DAT:
 			fallthrough
@@ -74,6 +86,13 @@ func (pm *processManager) start(state *entities.State) error {
 			log.Info().Msgf("process %s started", process.ID)
 		}(pid, community)
 	}
+
+	// add ports here?
+	cli := client.InitClient()
+
+	// is go the right way to kick off these processes?
+	go cli.RunClient()
+	go fs.RunFilesystem(cli.GetAuthService(), state, apiports, nets)
 
 	return nil
 }

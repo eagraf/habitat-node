@@ -8,12 +8,17 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// TODO: i shouldn't be creating a new user repo/token repo/auth service ...
-// need to somehow connect them with client but also keep seprate...
+// RunFilesystem exported to be called by orchestrator
+func RunFilesystem(as *client.AuthService, state *entities.State, ports map[entities.CommunityID]string, enets map[entities.CommunityID]entities.Backnet) {
 
-func runFilesystemAPI(as *client.AuthService, state *entities.State, nets map[entities.CommunityID]Backnet) {
+	backnets := make(map[entities.CommunityID]Backnet)
+	for id, port := range ports {
+		if enet, ok := enets[id]; ok {
+			backnets[id] = InitIPFSBacknet(id, enet, port)
+		}
+	}
 
-	fs, err := NewFilesystemService(as, state, nets)
+	fs, err := NewFilesystemService(as, state, backnets)
 	if err != nil {
 		panic(err)
 	}
