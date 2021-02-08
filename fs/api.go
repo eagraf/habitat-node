@@ -185,7 +185,7 @@ func (fs *FilesystemService) DoChecksSimple(args url.Values) (entities.Community
 func CommunityFromID(state *entities.State, comm entities.CommunityID) *entities.Community {
 	for _, elem := range state.Communities {
 		if elem.ID == comm {
-			return &elem
+			return elem
 		}
 	}
 	return nil
