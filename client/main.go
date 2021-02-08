@@ -10,7 +10,19 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func main() {
+// Client is for other packages to access authService, add other data as needed
+type Client struct {
+	authService *AuthService
+	userService *UserService
+}
+
+// InitClient just initializes empty services & directories
+func InitClient() *Client {
+
+	_, ok := os.LookupEnv("AUTH_DIR")
+	if !ok {
+		os.Setenv("AUTH_DIR", "auth/")
+	}
 
 	err := os.MkdirAll(os.Getenv("AUTH_DIR"), 0600)
 	if err != nil {
@@ -37,18 +49,27 @@ func main() {
 		panic(err)
 	}
 
+	return &Client{
+		authService: as,
+		userService: us,
+	}
+}
+
+// RunClient runs the client module (to be called by orchestrator)
+func (client *Client) RunClient() {
+
 	router := mux.NewRouter()
 
 	// These routes don't require verification
-	router.Path("/api/v1/login").Handler(http.HandlerFunc(as.LoginHandler))
-	router.Path("/api/v1/bootstrap").Handler(http.HandlerFunc(us.BootstrapUserHandler))
+	router.Path("/api/v1/login").Handler(http.HandlerFunc(client.authService.LoginHandler))
+	router.Path("/api/v1/bootstrap").Handler(http.HandlerFunc(client.userService.BootstrapUserHandler))
 	router.HandleFunc("/api/v1/version", VersionHandler)
 
 	// api subrouter requires token authentication
 	api := router.PathPrefix("/api/v1").Subrouter()
-	api.Use(as.Middleware)
-	api.HandleFunc("/logout", as.LogoutHandler).Methods("POST")
-	api.HandleFunc("/users", us.CreateUserHandler).Methods("POST")
+	api.Use(client.authService.Middleware)
+	api.HandleFunc("/logout", client.authService.LogoutHandler).Methods("POST")
+	api.HandleFunc("/users", client.userService.CreateUserHandler).Methods("POST")
 
 	server := &http.Server{
 		Handler:      router,
@@ -58,6 +79,12 @@ func main() {
 	}
 	log.Printf("Client listening on %s", server.Addr)
 	log.Fatal(server.ListenAndServe())
+
+}
+
+// GetAuthService returns the corresponding authservice for use by other packages
+func (cli *Client) GetAuthService() *AuthService {
+	return cli.authService
 }
 
 // VersionResponse contains basic version info about the group space
