@@ -62,7 +62,7 @@ func GetSubscriptionCategory(transitionType TransitionType) (TransitionSubscript
 // Host transitions are initiated by a user on the host node
 
 type AddCommunityTransition struct {
-	Community Community `json:"community"`
+	Community *Community `json:"community"`
 }
 
 func (ac AddCommunityTransition) Type() TransitionType {
@@ -86,7 +86,7 @@ func (ac AddCommunityTransition) CommunityID() CommunityID {
 
 type AddMemberTransition struct {
 	Community CommunityID `json:"community_id"`
-	User      User        `json:"user`
+	User      *User       `json:"user`
 }
 
 func (am AddMemberTransition) Type() TransitionType {

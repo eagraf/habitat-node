@@ -43,8 +43,8 @@ func initManager() *processManager {
 func (pm *processManager) start(state *entities.State) error {
 	go pm.errorListener()
 	for _, community := range state.Communities {
-		go func(community entities.Community) {
-			err := pm.startBacknet(&community)
+		go func(community *entities.Community) {
+			err := pm.startBacknet(community)
 			if err != nil {
 				log.Err(fmt.Errorf("error starting %s process for community %s: %s", community.Backnet.Type, community.ID, err.Error())).Msg("")
 			}
@@ -89,7 +89,7 @@ func (pm *processManager) startBacknet(community *entities.Community) error {
 		log.Err(fmt.Errorf("backnet type %s is not supported", community.Backnet.Type)).Msg("")
 	}
 
-	err := backnet.Configure(&community.Backnet)
+	err := backnet.Configure(community.Backnet)
 	if err != nil {
 		return err
 	}
