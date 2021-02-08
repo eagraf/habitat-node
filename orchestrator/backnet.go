@@ -18,7 +18,7 @@ type Backnet interface {
 
 type IPFSBacknet struct {
 	communityID entities.CommunityID
-	backnet     entities.Backnet
+	backnet     *entities.Backnet
 	process     *process
 
 	ipfsDir    string

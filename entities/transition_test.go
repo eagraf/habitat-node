@@ -11,7 +11,7 @@ func TestAddCommunity(t *testing.T) {
 	community := InitCommunity("community_0", "My Community", IPFS)
 
 	transition := AddCommunityTransition{
-		Community: *community,
+		Community: community,
 	}
 
 	_, err := transition.Reduce(state)
