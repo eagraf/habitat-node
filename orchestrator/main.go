@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
@@ -44,6 +46,24 @@ func main() {
 
 	m := initManager()
 	m.start(state)
+
+	time.Sleep(10 * time.Second)
+
+	m.Receive(entities.AddCommunityTransition{
+		Community: &entities.Community{
+			ID: entities.CommunityID("community_2"),
+			Backnet: &entities.Backnet{
+				Type: entities.IPFS,
+				Local: entities.LocalBacknetConfig{
+					PortMap: map[string]int{
+						"swarm":   4007,
+						"api":     4008,
+						"gateway": 4009,
+					},
+				},
+			},
+		},
+	})
 
 	select {}
 }
