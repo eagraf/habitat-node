@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -104,5 +105,25 @@ func (pm *processManager) startBacknet(community *entities.Community) error {
 	go pm.processErrorListener(process)
 	log.Info().Msgf("process %s started", process.ID)
 
+	return nil
+}
+
+// Receive implements TransitionSubscriber
+func (pm *processManager) Receive(transition entities.Transition) error {
+	switch transition.Type() {
+	case entities.AddCommunityTransitionType:
+		addCommunityTransition, ok := transition.(entities.AddCommunityTransition)
+		if !ok {
+			return errors.New("transition is not type AddCommunityTransition")
+		}
+
+		// start communities backnet
+		err := pm.startBacknet(addCommunityTransition.Community)
+		if err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("transition type %s not supported", transition.Type())
+	}
 	return nil
 }
