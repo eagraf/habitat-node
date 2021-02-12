@@ -7,8 +7,9 @@ type TransitionType string
 
 // All possible TransitionTypes
 const (
-	AddCommunityTransitionType TransitionType = "ADD_COMMUNITY"
-	AddMemberTransitionType    TransitionType = "ADD_MEMBER"
+	AddCommunityTransitionType  TransitionType = "ADD_COMMUNITY"
+	AddMemberTransitionType     TransitionType = "ADD_MEMBER"
+	UpdateBacknetTransitionType TransitionType = "UPDATE_BACKNET"
 )
 
 // TransitionSubscriptionCategory enumerates different types entities that a TransitionSubscriber could be subscribed to
@@ -21,8 +22,9 @@ const (
 )
 
 var transitionSubscriptionCategories = map[TransitionType]TransitionSubscriptionCategory{
-	AddCommunityTransitionType: CommunityCategory,
-	AddMemberTransitionType:    CommunityCategory,
+	AddCommunityTransitionType:  CommunityCategory,
+	AddMemberTransitionType:     CommunityCategory,
+	UpdateBacknetTransitionType: CommunityCategory,
 }
 
 // A Transition transitions the state from one arrangement to another
@@ -31,6 +33,7 @@ type Transition interface {
 	Type() TransitionType
 	Reduce(*State) (*State, error)
 	// TODO we might need to implement rollbacks as well
+	// TODO we might need to add a validate method
 }
 
 // CommunityTransition is a transition to a community element in state
@@ -107,4 +110,31 @@ func (am AddMemberTransition) Reduce(state *State) (*State, error) {
 
 func (am AddMemberTransition) CommunityID() CommunityID {
 	return am.Community
+}
+
+type UpdateBacknetTransition struct {
+	OldCommunity *Community
+	NewCommunity *Community
+}
+
+func (ub UpdateBacknetTransition) Type() TransitionType {
+	return UpdateBacknetTransitionType
+}
+
+func (ub UpdateBacknetTransition) Reduce(state *State) (*State, error) {
+	newState := *state
+	if _, ok := state.Communities[ub.OldCommunity.ID]; !ok {
+		return nil, fmt.Errorf("no community with id %s in state", ub.OldCommunity.ID)
+	}
+	if ub.OldCommunity.ID != ub.NewCommunity.ID {
+		return nil, fmt.Errorf("old and new community ids do not match %s, %s", ub.OldCommunity.ID, ub.NewCommunity.ID)
+	}
+
+	if ub.OldCommunity.Backnet.Type != ub.NewCommunity.Backnet.Type {
+		return nil, fmt.Errorf("switching backnet implementations is not supported")
+	}
+
+	*newState.Communities[ub.OldCommunity.ID].Backnet = *ub.NewCommunity.Backnet
+
+	return &newState, nil
 }
