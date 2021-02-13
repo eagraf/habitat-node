@@ -10,15 +10,14 @@ import (
 	"github.com/eagraf/habitat-node/client"
 	"github.com/eagraf/habitat-node/entities"
 	"github.com/eagraf/habitat-node/fs"
-	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
 type processManager struct {
-	processes map[processID]*process
+	processes map[processID]*Process
 	backnets  map[entities.CommunityID]Backnet
-	fs        processID
-	auth      processID
+	fs        ProcessID
+	auth      ProcessID
 	errChan   chan processError
 
 	portMutex  sync.Mutex
@@ -35,7 +34,7 @@ type processError struct {
 
 func initManager() *processManager {
 	return &processManager{
-		processes:  make(map[processID]*process),
+		processes:  make(map[processID]*Process),
 		backnets:   make(map[entities.CommunityID]Backnet),
 		errChan:    make(chan processError),
 		portMutex:  sync.Mutex{},
@@ -84,12 +83,12 @@ func (pm *processManager) errorListener() {
 	}
 }
 
-func (pm *processManager) processErrorListener(process *process) {
+func (pm *processManager) processErrorListener(process *Process) {
 	for {
 		err := <-process.errChan
 		pm.errChan <- processError{
 			processID:   process.ID,
-			communityID: process.communityID,
+			communityID: process.CommunityID,
 			err:         err,
 		}
 	}
@@ -97,11 +96,12 @@ func (pm *processManager) processErrorListener(process *process) {
 
 func (pm *processManager) startBacknet(community *entities.Community) (Backnet, error) {
 	var backnet Backnet
-	pid := processID(uuid.New().String())
+
+	process := InitProcess(ProcessTypeBacknet)
 
 	switch community.Backnet.Type {
 	case entities.IPFS:
-		myBacknet, err := InitIPFSBacknet(community)
+		myBacknet, err := InitIPFSBacknet(community, process)
 		if err != nil {
 			log.Err(err).Msg("error initializing backnet")
 		}
@@ -116,11 +116,10 @@ func (pm *processManager) startBacknet(community *entities.Community) (Backnet, 
 	if err != nil {
 		return nil, err
 	}
-	process, err := backnet.StartProcess()
+	process, err = backnet.StartProcess()
 	if err != nil {
 		return nil, err
 	}
-	process.ID = pid
 	pm.processes[process.ID] = process
 	pm.backnets[community.ID] = backnet
 
