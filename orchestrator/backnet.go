@@ -12,6 +12,7 @@ import (
 )
 
 type Backnet interface {
+	ProcessID() processID
 	Configure(backnet *entities.Backnet) error
 	StartProcess() (*process, error)
 }
@@ -46,6 +47,10 @@ func InitIPFSBacknet(community *entities.Community) (*IPFSBacknet, error) {
 		ipfsDir:     ipfsDir,
 		process:     nil,
 	}, nil
+}
+
+func (ib *IPFSBacknet) ProcessID() processID {
+	return ib.process.ID
 }
 
 func (ib *IPFSBacknet) Configure(newBacknet *entities.Backnet) error {

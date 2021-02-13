@@ -11,9 +11,8 @@ import (
 )
 
 type processManager struct {
-	processes map[processID]struct{}
-	apps      map[processID]process
-	backnets  map[processID]process
+	processes map[processID]*process
+	backnets  map[entities.CommunityID]Backnet
 	errChan   chan processError
 
 	portMutex  sync.Mutex
@@ -30,9 +29,8 @@ type processError struct {
 
 func initManager() *processManager {
 	return &processManager{
-		processes:  make(map[processID]struct{}),
-		apps:       make(map[processID]process),
-		backnets:   make(map[processID]process),
+		processes:  make(map[processID]*process),
+		backnets:   make(map[entities.CommunityID]Backnet),
 		errChan:    make(chan processError),
 		portMutex:  sync.Mutex{},
 		portAllocs: make(map[int]processID),
@@ -99,8 +97,8 @@ func (pm *processManager) startBacknet(community *entities.Community) error {
 		return err
 	}
 	process.ID = pid
-	pm.backnets[process.ID] = *process
-	pm.processes[process.ID] = struct{}{}
+	pm.processes[process.ID] = process
+	pm.backnets[community.ID] = backnet
 
 	go pm.processErrorListener(process)
 	log.Info().Msgf("process %s started", process.ID)
