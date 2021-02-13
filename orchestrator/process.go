@@ -4,22 +4,32 @@ import (
 	"context"
 
 	"github.com/eagraf/habitat-node/entities"
+	"github.com/google/uuid"
 )
 
-type processType string
+type ProcessType string
 
+// Process types
 const (
-	processTypeApp     processType = "app"
-	processTypeBacknet processType = "backnet"
+	ProcessTypeApp     ProcessType = "app"
+	ProcessTypeBacknet ProcessType = "backnet"
 )
 
 type processID string
 
-type process struct {
+type Process struct {
 	ID          processID
-	communityID entities.CommunityID
-	processType processType
-	context     context.Context
-	cancel      context.CancelFunc
-	errChan     chan error
+	CommunityID entities.CommunityID
+	ProcessType ProcessType
+
+	context context.Context
+	cancel  context.CancelFunc
+	errChan chan error
+}
+
+func InitProcess(pType ProcessType) *Process {
+	return &Process{
+		ID:          processID(uuid.New().String()),
+		ProcessType: pType,
+	}
 }

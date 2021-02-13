@@ -14,20 +14,20 @@ import (
 type Backnet interface {
 	ProcessID() processID
 	Configure(backnet *entities.Backnet) error
-	StartProcess() (*process, error)
+	StartProcess() (*Process, error)
 }
 
 type IPFSBacknet struct {
 	communityID entities.CommunityID
 	backnet     *entities.Backnet
-	process     *process
+	process     *Process // TODO refactor process out of here (we don't want a 2-way pointer
 
 	ipfsDir    string
 	configPath string
 	config     *IPFSConfig
 }
 
-func InitIPFSBacknet(community *entities.Community) (*IPFSBacknet, error) {
+func InitIPFSBacknet(community *entities.Community, process *Process) (*IPFSBacknet, error) {
 	// Make ipfs dir
 	ipfsDir := filepath.Join(os.Getenv("IPFS_DIR"), string(community.ID))
 	err := os.MkdirAll(ipfsDir, 0700)
@@ -41,11 +41,13 @@ func InitIPFSBacknet(community *entities.Community) (*IPFSBacknet, error) {
 		return nil, err
 	}
 
+	process.CommunityID = community.ID
+
 	return &IPFSBacknet{
 		communityID: community.ID,
 		backnet:     community.Backnet,
 		ipfsDir:     ipfsDir,
-		process:     nil,
+		process:     process,
 	}, nil
 }
 
@@ -154,7 +156,7 @@ func (ib *IPFSBacknet) Configure(newBacknet *entities.Backnet) error {
 	// TODO make sure daemon is restarted as well
 }
 
-func (ib *IPFSBacknet) StartProcess() (*process, error) {
+func (ib *IPFSBacknet) StartProcess() (*Process, error) {
 	if ib.backnet.Type != entities.IPFS {
 		return nil, errors.New("backnet should be of type IPFS")
 	}
@@ -169,13 +171,10 @@ func (ib *IPFSBacknet) StartProcess() (*process, error) {
 	cmd := exec.CommandContext(ctx, "ipfs", "daemon")
 	cmd.Env = env
 
-	ib.process = &process{
-		communityID: ib.communityID,
-		processType: processTypeBacknet,
-		context:     ctx,
-		cancel:      cancel,
-		errChan:     errChan,
-	}
+	// initialize process variables
+	ib.process.context = ctx
+	ib.process.cancel = cancel
+	ib.process.errChan = errChan
 
 	// Start ipfs daemon
 	go func(cmd *exec.Cmd, errChan chan error) {
