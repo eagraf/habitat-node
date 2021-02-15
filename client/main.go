@@ -21,31 +21,36 @@ func InitClient() *Client {
 
 	_, ok := os.LookupEnv("AUTH_DIR")
 	if !ok {
-		os.Setenv("AUTH_DIR", "auth/")
+		os.Setenv("AUTH_DIR", "auth")
 	}
 
-	err := os.MkdirAll(os.Getenv("AUTH_DIR"), 0600)
+	err := os.Mkdir(os.Getenv("AUTH_DIR"), 0777) // i dont think this should be 0777
 	if err != nil {
+		log.Printf("err making auth dirs")
 		panic(err)
 	}
 
 	ur, err := NewUserRepo(os.Getenv("AUTH_DIR"))
 	if err != nil {
+		log.Printf("err making user repo")
 		panic(err)
 	}
 
 	tr, err := NewTokenRepo(os.Getenv("AUTH_DIR"))
 	if err != nil {
+		log.Printf("err making token repo")
 		panic(err)
 	}
 
 	as, err := NewAuthService(tr, ur)
 	if err != nil {
+		log.Printf("err making auth service")
 		panic(err)
 	}
 
 	us := NewUserService(ur)
 	if err != nil {
+		log.Printf("err making user service")
 		panic(err)
 	}
 
@@ -83,8 +88,8 @@ func (client *Client) RunClient() {
 }
 
 // GetAuthService returns the corresponding authservice for use by other packages
-func (cli *Client) GetAuthService() *AuthService {
-	return cli.authService
+func (client *Client) GetAuthService() *AuthService {
+	return client.authService
 }
 
 // VersionResponse contains basic version info about the group space
