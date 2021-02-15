@@ -261,6 +261,7 @@ func (ur *UserRepo) writeUserFile(users *UserTable) error {
 		return err
 	}
 
+	// log.Print("here ", ur.path)
 	err = ioutil.WriteFile(ur.path, buf, 0600)
 	if err != nil {
 		return err

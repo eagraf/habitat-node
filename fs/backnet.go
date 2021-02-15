@@ -277,14 +277,18 @@ func (net *IPFSBacknet) Unpin(filepath string) error {
 // ListFiles implements ls for IPFSBacknets
 func (net *IPFSBacknet) ListFiles(filepath string) error {
 
+	fmt.Print("list files called on path ", filepath, "\n")
 	argmap := map[string]string{}
 	if filepath != "" {
 		argmap = map[string]string{"arg": filepath}
 	}
+
 	q := url.Values{}
 	for arg, val := range argmap {
 		q.Set(arg, val)
 	}
+
+	fmt.Print(net.api)
 
 	_, err := IPFSAPICall(
 		net.api,

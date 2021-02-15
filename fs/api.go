@@ -3,9 +3,12 @@ package fs
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
+	"strings"
 
 	"github.com/eagraf/habitat-node/client"
 	"github.com/eagraf/habitat-node/entities"
@@ -15,7 +18,7 @@ import (
 // TODO: move to somewhere else?
 type Session struct {
 	CommunityID entities.CommunityID
-	User        *client.User
+	User        *client.User // this is the "wrong" type of user
 }
 
 // Permission is either
@@ -96,16 +99,28 @@ func GetRequestQueries(r *http.Request) url.Values {
 // if it is in the format <community_id>:<file_path> returns community_id, file_path
 // else it returns error
 func ParseFilePath(path string) (entities.CommunityID, string, error) {
-	re := regexp.MustCompile(`^([0-9]*):(/[^/ ]*)+/?$`)
-	if (re.MatchString(path)) == false {
-		return "", "", errors.New("invalid path format")
+	fmt.Print("path to parse ", path, "\n")
+
+	tomatch := `[a-zA-Z0-9_-]*:[^/].*`
+
+	if ok, err := regexp.MatchString(tomatch, path); !ok {
+		return "", "", err
 	}
 
-	col := regexp.MustCompile(`:`)
-	arr := col.Split(path, 1)
+	arr := strings.Split(path, ":")
+
+	fmt.Print(arr)
 
 	if len(arr) < 2 {
 		return "", "", errors.New("invalid path format")
+	}
+
+	if arr[0] == "" {
+		return "", "", errors.New("no comm id specified")
+	}
+
+	if arr[1] == "" {
+		arr[1] = "."
 	}
 	return entities.CommunityID(arr[0]), arr[1], nil // is casting bad?
 
@@ -129,6 +144,9 @@ func (fs *FilesystemService) DoChecks(args url.Values) (*Session, string, error)
 	}
 
 	commID, filepath, err := ParseFilePath(path)
+	if err != nil {
+		return nil, "", err
+	}
 
 	allow, err := CheckPermissions(user, commID, path)
 	if allow == false || err != nil {
@@ -142,6 +160,25 @@ func (fs *FilesystemService) DoChecks(args url.Values) (*Session, string, error)
 		CommunityID: commID,
 		User:        user,
 	}, filepath, nil
+
+}
+
+// DoChecksSimple is for use before we have user authentication set up
+// here we pass in a community id (rather than session token) and assume user has permissions
+// since we don't have users set up yet
+func (fs *FilesystemService) DoChecksSimple(args url.Values) (entities.CommunityID, string, error) {
+
+	path := args.Get("path")
+	if path == "" {
+		return "", "", errors.New("Empty path not accepted")
+	}
+
+	commID, filepath, err := ParseFilePath(path)
+	if err != nil {
+		return "", "", err
+	}
+
+	return commID, filepath, nil
 
 }
 
@@ -168,25 +205,65 @@ func (fs *FilesystemService) backnetFromCommID(sessID entities.CommunityID) (Bac
 	return net, nil
 }
 
+// GetBacknetFromRequest is a helper function for things pre-IPFS HTTP API calls
+/*
+func (fs *FilesystemService) GetBacknetFromRequest(args url.Values) (Backnet, error) {
+
+}
+*/
+
 // ParseListFiles prints out the list of files and returns
 func (fs *FilesystemService) ParseListFiles(w http.ResponseWriter, r *http.Request) {
 
 	args := GetRequestQueries(r)
-	session, filepath, err := fs.DoChecks(args)
+	// session, filepath, err := fs.DoChecks(args) // for when users are set up
 
+	commid, filepath, err := fs.DoChecksSimple(args)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
 	// how to get community backnet from user
-	net, err := fs.backnetFromCommID(session.CommunityID)
+	net, err := fs.backnetFromCommID(commid)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
 	err = net.ListFiles(filepath)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+}
+
+func (fs *FilesystemService) Write(w http.ResponseWriter, r *http.Request) {
+
+	args := GetRequestQueries(r)
+
+	commid, filepath, err := fs.DoChecksSimple(args)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fname := args.Get("fname")
+	file, err := os.Open(fname)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// how to get community backnet from user
+	net, err := fs.backnetFromCommID(commid)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	err = net.Write(filepath, file)
 
 	if err != nil {
 		fmt.Println(err)
