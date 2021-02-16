@@ -3,7 +3,6 @@ package fs
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -101,15 +100,14 @@ func GetRequestQueries(r *http.Request) url.Values {
 func ParseFilePath(path string) (entities.CommunityID, string, error) {
 	fmt.Print("path to parse ", path, "\n")
 
-	tomatch := `[a-zA-Z0-9_-]*:[^/].*`
+	tomatch := `[a-zA-Z0-9_-]*:/*[^/]*.*`
 
-	if ok, err := regexp.MatchString(tomatch, path); !ok {
-		return "", "", err
+	if ok, _ := regexp.MatchString(tomatch, path); !ok {
+		return "", "", errors.New("the given path did not pass regex")
 	}
 
 	arr := strings.Split(path, ":")
-
-	fmt.Print(arr)
+	fmt.Println("comm: ", arr[0], " path ", arr[1])
 
 	if len(arr) < 2 {
 		return "", "", errors.New("invalid path format")
@@ -220,7 +218,7 @@ func (fs *FilesystemService) ParseListFiles(w http.ResponseWriter, r *http.Reque
 
 	commid, filepath, err := fs.DoChecksSimple(args)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println(err.Error())
 		return
 	}
 
@@ -240,7 +238,8 @@ func (fs *FilesystemService) ParseListFiles(w http.ResponseWriter, r *http.Reque
 
 }
 
-func (fs *FilesystemService) Write(w http.ResponseWriter, r *http.Request) {
+// ParseWrites handles requests to write files
+func (fs *FilesystemService) ParseWrites(w http.ResponseWriter, r *http.Request) {
 
 	args := GetRequestQueries(r)
 
@@ -250,10 +249,11 @@ func (fs *FilesystemService) Write(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fname := args.Get("fname")
+	fname := args.Get("file")
 	file, err := os.Open(fname)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err.Error())
+		return
 	}
 
 	// how to get community backnet from user
@@ -268,6 +268,224 @@ func (fs *FilesystemService) Write(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 		return
+	}
+
+}
+
+// ParsePinActions handles checks for is pins, pinning and unpinning
+func (fs *FilesystemService) ParsePinActions(w http.ResponseWriter, r *http.Request) {
+
+	args := GetRequestQueries(r)
+
+	commid, filepath, err := fs.DoChecksSimple(args)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	action := args.Get("action")
+
+	// how to get community backnet from user
+	net, err := fs.backnetFromCommID(commid)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	switch action {
+	case "check":
+		_, err = net.IsPinned(filepath)
+	case "pin":
+		err = net.Pin(filepath)
+	case "unpin":
+		err = net.Unpin(filepath)
+	}
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+}
+
+// ParseRemoves handles requests to remove files
+func (fs *FilesystemService) ParseRemoves(w http.ResponseWriter, r *http.Request) {
+
+	args := GetRequestQueries(r)
+
+	commid, filepath, err := fs.DoChecksSimple(args)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	isdirstr := args.Get("isdir")
+	isdir := false
+	if isdirstr == "true" {
+		isdir = true
+	}
+
+	// how to get community backnet from user
+	net, err := fs.backnetFromCommID(commid)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	err = net.Remove(filepath, bool(isdir))
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+}
+
+// ParseCats handles requests to cat files
+func (fs *FilesystemService) ParseCats(w http.ResponseWriter, r *http.Request) {
+
+	args := GetRequestQueries(r)
+
+	commid, filepath, err := fs.DoChecksSimple(args)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// how to get community backnet from user
+	net, err := fs.backnetFromCommID(commid)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	res, err := net.Cat(filepath)
+
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(string(res))
+	}
+
+}
+
+// ParseMoves handles requests to move files
+func (fs *FilesystemService) ParseMoves(w http.ResponseWriter, r *http.Request) {
+
+	args := GetRequestQueries(r)
+
+	oldpath := args.Get("old")
+	if oldpath == "" {
+		fmt.Println("oldpath cannot be an empty argument")
+		return
+	}
+
+	newpath := args.Get("new")
+	if newpath == "" {
+		fmt.Println("newpath cannot be an empty argument")
+		return
+	}
+
+	oldcommID, oldfilepath, err := ParseFilePath(oldpath)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	newcommID, newfilepath, err := ParseFilePath(newpath)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	if oldcommID != newcommID {
+		fmt.Println("cannot move files between communities (yet!)")
+		return
+	}
+
+	// how to get community backnet from user
+	net, err := fs.backnetFromCommID(oldcommID)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	err = net.Move(oldfilepath, newfilepath)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+// ParseCopys handles requests to copy files
+func (fs *FilesystemService) ParseCopys(w http.ResponseWriter, r *http.Request) {
+
+	args := GetRequestQueries(r)
+
+	oldpath := args.Get("old")
+	if oldpath == "" {
+		fmt.Println("oldpath cannot be an empty argument")
+	}
+
+	newpath := args.Get("new")
+	if newpath == "" {
+		fmt.Println("newpath cannot be an empty argument")
+		return
+	}
+
+	oldcommID, oldfilepath, err := ParseFilePath(oldpath)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	newcommID, newfilepath, err := ParseFilePath(newpath)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	if oldcommID != newcommID {
+		fmt.Println("cannot move files between communities (yet!)")
+		return
+	}
+
+	// how to get community backnet from user
+	net, err := fs.backnetFromCommID(oldcommID)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	err = net.Copy(oldfilepath, newfilepath)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+// ParseMkdirs handles requests to make a new directory
+func (fs *FilesystemService) ParseMkdirs(w http.ResponseWriter, r *http.Request) {
+
+	args := GetRequestQueries(r)
+
+	commid, filepath, err := fs.DoChecksSimple(args)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// how to get community backnet from user
+	net, err := fs.backnetFromCommID(commid)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	err = net.MakeDir(filepath)
+
+	if err != nil {
+		fmt.Println(err)
 	}
 
 }

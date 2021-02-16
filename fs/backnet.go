@@ -142,6 +142,7 @@ func (net *IPFSBacknet) getHash(path string) (string, error) {
 		return "", err
 	}
 
+	fmt.Println(string(resBody), resBodyJSON.Hash)
 	return resBodyJSON.Hash, nil
 }
 
@@ -162,15 +163,25 @@ type PinListResponse struct {
 	PinLsObject map[string](string)
 }
 
+// PinListResponse2 is
+// this is what the pinlist response acTually is
+type PinListResponse2 struct {
+	Message string `json:"Message"`
+	Code    int    `json:"Code"`
+	Type2   string `json:"Type"`
+}
+
 // IsPinned checks if a file is pinned on the users computer
 func (net *IPFSBacknet) IsPinned(filepath string) (bool, error) {
+
+	fmt.Println("filepath ", filepath)
 	hash, err := net.getHash(filepath)
 	if err != nil {
 		return false, err
 	}
 
 	// dir, _ := filepath.Split(path)
-	argmap := map[string]string{}
+	argmap := map[string]string{"arg": hash}
 	q := url.Values{}
 	for arg, val := range argmap {
 		q.Set(arg, val)
@@ -192,33 +203,47 @@ func (net *IPFSBacknet) IsPinned(filepath string) (bool, error) {
 		return false, err
 	}
 
-	var resBodyJSON Keys
-	err = json.Unmarshal(resBody, &resBodyJSON)
+	fmt.Println(string(resBody))
+	var resBodyUnfoundJSON PinListResponse2
+	err = json.Unmarshal(resBody, &resBodyUnfoundJSON)
 	if err != nil {
 		return false, err
 	}
+	if resBodyUnfoundJSON.Message != "" {
+		fmt.Println(resBodyUnfoundJSON.Message)
+		return false, nil
+	}
 
-	// fmt.Println(resBodyJSON)
-
+	var resBodyJSON Keys
+	err = json.Unmarshal(resBody, &resBodyJSON)
 	keys := resBodyJSON.Pins
+	fmt.Println("here ", resBodyJSON, " hash ", hash)
 	if _, found := keys[hash]; found {
+		fmt.Println("found pin for ", filepath)
 		return true, nil
 	}
+	fmt.Println("DID NOT find pin for ", filepath)
 	return false, nil
 
 }
 
 // Pin implements pinning files locally for IPFS
 func (net *IPFSBacknet) Pin(filepath string) error {
+
+	fmt.Println("filepath ", filepath)
 	hash, err := net.getHash(filepath)
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("hash ", hash)
 	argmap := map[string]string{"arg": hash}
 	q := url.Values{}
 	for arg, val := range argmap {
 		q.Set(arg, val)
 	}
+
+	fmt.Println("q", q)
 
 	res, err := IPFSAPICall(
 		net.api,
@@ -231,7 +256,8 @@ func (net *IPFSBacknet) Pin(filepath string) error {
 		return err
 	}
 
-	fmt.Println(res.Body)
+	bytes, err := ioutil.ReadAll(res.Body)
+	fmt.Println(string(bytes))
 	return nil
 }
 
@@ -270,7 +296,9 @@ func (net *IPFSBacknet) Unpin(filepath string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(res.Body)
+
+	bytes, err := ioutil.ReadAll(res.Body)
+	fmt.Println(string(bytes))
 	return nil
 }
 
@@ -288,9 +316,9 @@ func (net *IPFSBacknet) ListFiles(filepath string) error {
 		q.Set(arg, val)
 	}
 
-	fmt.Print(net.api)
+	fmt.Print(net.api, "\n")
 
-	_, err := IPFSAPICall(
+	res, err := IPFSAPICall(
 		net.api,
 		"/api/v0/files/ls",
 		q,
@@ -300,6 +328,9 @@ func (net *IPFSBacknet) ListFiles(filepath string) error {
 	if err != nil {
 		return err
 	}
+
+	bytes, err := ioutil.ReadAll(res.Body)
+	fmt.Println(string(bytes))
 
 	return nil
 }
@@ -316,7 +347,7 @@ func (net *IPFSBacknet) Remove(filepath string, isdir bool) error {
 		q.Set(arg, val)
 	}
 
-	_, err := IPFSAPICall(
+	res, err := IPFSAPICall(
 		net.api,
 		"/api/v0/files/rm",
 		q,
@@ -326,6 +357,9 @@ func (net *IPFSBacknet) Remove(filepath string, isdir bool) error {
 	if err != nil {
 		return err
 	}
+
+	bytes, err := ioutil.ReadAll(res.Body)
+	fmt.Println(string(bytes))
 
 	return nil
 }
@@ -380,7 +414,8 @@ func (net *IPFSBacknet) Write(filepath string, f *os.File) error {
 		return err
 	}
 
-	fmt.Println(res.Body)
+	bytes, err := ioutil.ReadAll(res.Body)
+	fmt.Println(string(bytes))
 	return nil
 }
 
@@ -403,7 +438,8 @@ func (net *IPFSBacknet) Move(oldpath string, newpath string) error {
 		return err
 	}
 
-	fmt.Println(res.Body)
+	bytes, err := ioutil.ReadAll(res.Body)
+	fmt.Println(string(bytes))
 	return nil
 }
 
@@ -426,7 +462,8 @@ func (net *IPFSBacknet) Copy(oldpath string, newpath string) error {
 		return err
 	}
 
-	fmt.Println(res.Body)
+	bytes, err := ioutil.ReadAll(res.Body)
+	fmt.Println(string(bytes))
 	return nil
 }
 
@@ -447,6 +484,7 @@ func (net *IPFSBacknet) MakeDir(dirpath string) error {
 		return err
 	}
 
-	fmt.Println(res.Body)
+	bytes, err := ioutil.ReadAll(res.Body)
+	fmt.Println(string(bytes))
 	return nil
 }

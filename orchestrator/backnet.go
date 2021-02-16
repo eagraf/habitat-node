@@ -96,6 +96,7 @@ func (ib *IPFSBacknet) StartProcess() (*process, error) {
 	go func(errChan chan error) {
 		cmd = exec.Command("ipfs", "daemon")
 		cmd.Env = env
+		fmt.Print("hi\n")
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		err = cmd.Start()
