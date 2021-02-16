@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/eagraf/habitat-node/entities"
+	"github.com/eagraf/habitat-node/orchestrator/processes"
 )
 
 func main() {
@@ -44,8 +45,8 @@ func main() {
 		},
 	}
 
-	m := initManager()
-	m.start(state)
+	m := processes.InitManager()
+	m.Start(state)
 
 	time.Sleep(10 * time.Second)
 
