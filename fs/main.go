@@ -32,7 +32,13 @@ func RunFilesystem(as *client.AuthService, state *entities.State, ports map[enti
 
 	router := mux.NewRouter()
 	router.PathPrefix("/api/fs/ls").Handler(http.HandlerFunc(fs.ParseListFiles))
-	router.PathPrefix("/api/fs/write").Handler(http.HandlerFunc(fs.Write))
+	router.PathPrefix("/api/fs/write").Handler(http.HandlerFunc(fs.ParseWrites))
+	router.PathPrefix("/api/fs/pin").Handler(http.HandlerFunc(fs.ParsePinActions))
+	router.PathPrefix("/api/fs/remove").Handler(http.HandlerFunc(fs.ParseRemoves))
+	router.PathPrefix("/api/fs/cat").Handler(http.HandlerFunc(fs.ParseCats))
+	router.PathPrefix("/api/fs/move").Handler(http.HandlerFunc(fs.ParseMoves))
+	router.PathPrefix("/api/fs/copy").Handler(http.HandlerFunc(fs.ParseCopys))
+	router.PathPrefix("/api/fs/mkdir").Handler(http.HandlerFunc(fs.ParseMkdirs))
 
 	// eventually want to do this:
 	// api := router.PathPrefix("/api/v1/fs").Subrouter()
