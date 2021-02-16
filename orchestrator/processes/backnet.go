@@ -1,4 +1,4 @@
-package main
+package processes
 
 import (
 	"errors"
@@ -12,7 +12,7 @@ import (
 )
 
 type Backnet interface {
-	ProcessID() processID
+	ProcessID() ProcessID
 	Configure(backnet *entities.Backnet) error
 	StartProcess() (*Process, error)
 }
@@ -51,7 +51,7 @@ func InitIPFSBacknet(community *entities.Community, process *Process) (*IPFSBack
 	}, nil
 }
 
-func (ib *IPFSBacknet) ProcessID() processID {
+func (ib *IPFSBacknet) ProcessID() ProcessID {
 	return ib.process.ID
 }
 

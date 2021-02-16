@@ -1,4 +1,4 @@
-package main
+package processes
 
 import (
 	"errors"
@@ -9,36 +9,36 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type processManager struct {
-	processes map[processID]*Process
+type ProcessManager struct {
+	processes map[ProcessID]*Process
 	backnets  map[entities.CommunityID]Backnet
 	errChan   chan processError
 
 	portMutex  sync.Mutex
-	portAllocs map[int]processID
+	portAllocs map[int]ProcessID
 	startPort  int
 	portCount  int
 }
 
 type processError struct {
-	processID   processID
+	processID   ProcessID
 	communityID entities.CommunityID
 	err         error
 }
 
-func initManager() *processManager {
-	return &processManager{
-		processes:  make(map[processID]*Process),
+func InitManager() *ProcessManager {
+	return &ProcessManager{
+		processes:  make(map[ProcessID]*Process),
 		backnets:   make(map[entities.CommunityID]Backnet),
 		errChan:    make(chan processError),
 		portMutex:  sync.Mutex{},
-		portAllocs: make(map[int]processID),
+		portAllocs: make(map[int]ProcessID),
 		startPort:  4000,
 		portCount:  0,
 	}
 }
 
-func (pm *processManager) start(state *entities.State) error {
+func (pm *ProcessManager) Start(state *entities.State) error {
 	go pm.errorListener()
 	for _, community := range state.Communities {
 		go func(community *entities.Community) {
@@ -52,14 +52,14 @@ func (pm *processManager) start(state *entities.State) error {
 	return nil
 }
 
-func (pm *processManager) errorListener() {
+func (pm *ProcessManager) errorListener() {
 	for {
 		pErr := <-pm.errChan
 		log.Err(pErr.err).Msgf("process: %s, community: %s", pErr.processID, pErr.communityID)
 	}
 }
 
-func (pm *processManager) processErrorListener(process *Process) {
+func (pm *ProcessManager) processErrorListener(process *Process) {
 	for {
 		err := <-process.errChan
 		pm.errChan <- processError{
@@ -70,7 +70,7 @@ func (pm *processManager) processErrorListener(process *Process) {
 	}
 }
 
-func (pm *processManager) startBacknet(community *entities.Community) error {
+func (pm *ProcessManager) startBacknet(community *entities.Community) error {
 	var backnet Backnet
 
 	process := InitProcess(ProcessTypeBacknet)
@@ -106,7 +106,7 @@ func (pm *processManager) startBacknet(community *entities.Community) error {
 }
 
 // Receive implements TransitionSubscriber
-func (pm *processManager) Receive(transition entities.Transition) error {
+func (pm *ProcessManager) Receive(transition entities.Transition) error {
 	switch transition.Type() {
 	case entities.AddCommunityTransitionType:
 		addCommunityTransition, ok := transition.(entities.AddCommunityTransition)
@@ -119,6 +119,30 @@ func (pm *processManager) Receive(transition entities.Transition) error {
 		if err != nil {
 			return err
 		}
+	case entities.UpdateBacknetTransitionType:
+		updateBacknetTransition, ok := transition.(entities.UpdateBacknetTransition)
+		if !ok {
+			return errors.New("transition is not type UpdateBacknetTransition")
+		}
+
+		// stop current backnet process if it is running
+		communityID := updateBacknetTransition.OldCommunity.ID
+		backnet := pm.backnets[communityID]
+		pm.processes[backnet.ProcessID()].cancel()
+
+		// reconfigure backnet
+		err := backnet.Configure(updateBacknetTransition.NewCommunity.Backnet)
+		if err != nil {
+			// TODO restart with old configuration? or rollback?
+			return fmt.Errorf("failed to reconfigure process: %s", err.Error())
+		}
+
+		// restart backnet
+		_, err = backnet.StartProcess()
+		if err != nil {
+			return err
+		}
+
 	default:
 		return fmt.Errorf("transition type %s not supported", transition.Type())
 	}

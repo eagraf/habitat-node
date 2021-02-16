@@ -1,4 +1,4 @@
-package main
+package processes
 
 import (
 	"context"
@@ -15,10 +15,10 @@ const (
 	ProcessTypeBacknet ProcessType = "backnet"
 )
 
-type processID string
+type ProcessID string
 
 type Process struct {
-	ID          processID
+	ID          ProcessID
 	CommunityID entities.CommunityID
 	ProcessType ProcessType
 
@@ -29,7 +29,7 @@ type Process struct {
 
 func InitProcess(pType ProcessType) *Process {
 	return &Process{
-		ID:          processID(uuid.New().String()),
+		ID:          ProcessID(uuid.New().String()),
 		ProcessType: pType,
 	}
 }
