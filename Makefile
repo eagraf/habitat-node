@@ -7,6 +7,7 @@ build : clean
 	$(MAKE) -C orchestrator build
 	$(MAKE) -C fs build
 	$(MAKE) -C client build
+	$(MAKE) -C test-suite build
 
 clean :
 	go clean -testcache
