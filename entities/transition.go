@@ -176,8 +176,8 @@ func (am AddMemberTransition) CommunityID() CommunityID {
 }
 
 type UpdateBacknetTransition struct {
-	OldCommunity *Community
-	NewCommunity *Community
+	OldCommunity *Community `json:"old_community" mapstructure:"old_community"`
+	NewCommunity *Community `json:"old_community" mapstructure:"old_community"`
 }
 
 func (ub UpdateBacknetTransition) Type() TransitionType {

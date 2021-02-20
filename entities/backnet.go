@@ -14,12 +14,13 @@ const (
 type Backnet struct {
 	Type      BacknetType        `json:"type"`
 	Bootstrap []string           `json:"bootstrap"`
-	Local     LocalBacknetConfig `json:"local_backnet_config"`
+	Local     LocalBacknetConfig `json:"local_backnet_config" mapstructure:"local_backnet_config"`
 }
 
 // LocalBacknetConfig contains configurations for a backnet that are not shared with peers
 type LocalBacknetConfig struct {
-	PortMap map[string]int
+	Hola    string         `json:"hola"`
+	PortMap map[string]int `json:"port_map"  mapstructure:"port_map"`
 }
 
 func InitBacknet(backnetType BacknetType) *Backnet {
