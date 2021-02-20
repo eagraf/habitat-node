@@ -1,0 +1,60 @@
+{
+    "transitions": [
+        {
+            "type": "ADD_COMMUNITY",
+            "transition": {
+                "community": {
+                    "id": "community_0",
+                    "name": "my community",
+                    "backnet": {
+                        "type": "ipfs",
+                        "bootstrap": ["hello"],
+                        "local_backnet_config": {
+                            "hola": "hello",
+                            "port_map": {
+                                "swarm": 4001,
+                                "api": 4002,
+                                "gateway": 4003
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "type": "UPDATE_BACKNET",
+            "transition": {
+                "old_community": {
+                    "id": "community_0",
+                    "name": "my community",
+                    "backnet": {
+                        "type": "ipfs",
+                        "bootstrap": [],
+                        "local_backnet_config": {
+                            "port_map": {
+                                "swarm": 4001,
+                                "api": 4002,
+                                "gateway": 4003
+                            }
+                        }
+                    }
+                },
+                "new_community": {
+                    "id": "community_0",
+                    "name": "my community",
+                    "backnet": {
+                        "type": "ipfs",
+                        "bootstrap": [],
+                        "local_backnet_config": {
+                            "port_map": {
+                                "swarm": 4004,
+                                "api": 4005,
+                                "gateway": 4006
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}
