@@ -109,7 +109,8 @@ func (pm *ProcessManager) startBacknet(community *entities.Community) error {
 func (pm *ProcessManager) Receive(transition entities.Transition) error {
 	switch transition.Type() {
 	case entities.AddCommunityTransitionType:
-		addCommunityTransition, ok := transition.(entities.AddCommunityTransition)
+		log.Info().Msgf("received ADD_COMMUNITY transition")
+		addCommunityTransition, ok := transition.(*entities.AddCommunityTransition)
 		if !ok {
 			return errors.New("transition is not type AddCommunityTransition")
 		}
@@ -120,7 +121,8 @@ func (pm *ProcessManager) Receive(transition entities.Transition) error {
 			return err
 		}
 	case entities.UpdateBacknetTransitionType:
-		updateBacknetTransition, ok := transition.(entities.UpdateBacknetTransition)
+		log.Info().Msgf("received UPDATE_BACKNET transition")
+		updateBacknetTransition, ok := transition.(*entities.UpdateBacknetTransition)
 		if !ok {
 			return errors.New("transition is not type UpdateBacknetTransition")
 		}
