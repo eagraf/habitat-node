@@ -5,6 +5,7 @@ go 1.15
 require (
 	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/google/uuid v1.2.0
+	github.com/hashicorp/raft v1.2.0 // indirect
 	github.com/ipfs/go-ipfs-config v0.11.0
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/rs/zerolog v1.20.0
