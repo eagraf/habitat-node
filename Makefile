@@ -5,6 +5,7 @@ all : build
 build : clean	
 	mkdir -p $(BIN_DIR)
 	$(MAKE) -C orchestrator build
+	$(MAKE) -C state build
 	$(MAKE) -C test-suite build
 
 clean :
