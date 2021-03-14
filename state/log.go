@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
+	"os"
+	"sync"
 	"time"
 
 	"github.com/eagraf/habitat-node/entities"
@@ -27,6 +29,18 @@ type Entry struct {
 
 	SequenceNumber int64     `json:"sequence_number"`
 	Committed      time.Time `json:"committed"`
+}
+
+func NewLog(path string) (*Log, error) {
+	walWriter, err := NewWALWriter(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Log{
+		LogWriter:         walWriter,
+		CurSequenceNumber: 0,
+	}, nil
 }
 
 // WriteAhead appends to the log file. This method should be called before anything else is done to process state
@@ -72,4 +86,43 @@ func DecodeLogEntry(entry []byte) (*Entry, error) {
 	}
 
 	return unmarshalled, nil
+}
+
+type WALWriter struct {
+	logPath string
+	logFile *os.File
+	mutex   *sync.Mutex
+}
+
+func (ww *WALWriter) Write(buf []byte) (int, error) {
+	ww.mutex.Lock()
+
+	n, err := ww.logFile.Write(buf)
+	if err != nil {
+		return n, err
+	}
+
+	// Call fsync syscall to ensure log is immediately persisted to physical storage
+	err = ww.logFile.Sync()
+	if err != nil {
+		return n, err
+	}
+
+	ww.mutex.Unlock()
+
+	return n, nil
+}
+
+func NewWALWriter(path string) (*WALWriter, error) {
+	// The WAL is kept as a persistently open append and write only file
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return nil, err
+	}
+
+	return &WALWriter{
+		logPath: path,
+		logFile: file,
+		mutex:   &sync.Mutex{},
+	}, nil
 }
