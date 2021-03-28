@@ -1,4 +1,4 @@
-package main
+package state
 
 import (
 	"fmt"
@@ -29,7 +29,7 @@ func main() {
 	var state *entities.State
 
 	for _, community := range state.Communities {
-		rsm, err := initRSM(&community)
+		rsm, err := initRSM(community)
 		if err != nil {
 			fmt.Println("AAHHH")
 		}
