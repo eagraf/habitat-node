@@ -76,6 +76,12 @@ func (pm *ProcessManager) Start(state *entities.State) error {
 	return nil
 }
 
+func (pm *ProcessManager) Stop() {
+	for _, process := range pm.processes {
+		process.cancel()
+	}
+}
+
 func (pm *ProcessManager) errorListener() {
 	for {
 		pErr := <-pm.errChan
