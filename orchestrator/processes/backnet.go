@@ -1,6 +1,7 @@
 package processes
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"os"
@@ -135,7 +136,7 @@ func (ib *IPFSBacknet) Configure(newBacknet *entities.Backnet) error {
 			fmt.Sprintf("IPFS_PATH=%s", ib.ipfsDir),
 		}
 
-		// Run ipfs init
+		// Run ipfs config replace
 		ctx, _ := context.WithCancel(context.Background())
 		cmd := exec.CommandContext(ctx, "ipfs", "config", "replace", ib.configPath)
 		cmd.Env = env
@@ -176,21 +177,37 @@ func (ib *IPFSBacknet) StartProcess() (*Process, error) {
 	ib.process.cancel = cancel
 	ib.process.errChan = errChan
 
-	// Start ipfs daemon
-	go func(cmd *exec.Cmd, errChan chan error) {
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		err := cmd.Start()
-		if err != nil {
-			errChan <- err
-		}
-		err = cmd.Wait()
-		if err != nil {
-			errChan <- err
-		}
-	}(cmd, errChan)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
 
-	return ib.process, nil
+	scanner := bufio.NewScanner(stdout)
+
+	// Start ipfs daemon
+	err = cmd.Start()
+	if err != nil {
+		errChan <- err
+	}
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "Daemon is ready" {
+			go func(cmd *exec.Cmd, errChan chan error) {
+				//cmd.Stdout = os.Stdout
+				//cmd.Stderr = os.Stderr
+				err = cmd.Wait()
+				if err != nil {
+					errChan <- err
+				}
+			}(cmd, errChan)
+			return ib.process, nil
+		} else if err := scanner.Err(); err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, errors.New("cmd ended without receiving \"Daemon is ready\"")
 }
 
 func buildConfig(builder *IPFSConfigBuilder, backnet *entities.Backnet) (*IPFSConfig, error) {
