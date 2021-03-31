@@ -4,7 +4,7 @@ The filesystem api runs on port 6000. It handles all GET requests of the form /a
 
 
 ## /api/fs/ls:
-curl -s -X GET 'http://127.0.0.1:6000/api/fs/write?path=<community_id:filename>'
+curl -s -X GET 'http://127.0.0.1:6000/api/fs/ls?path=<community_id:filename>'
 
 ## /api/fs/write:
 curl -s -X GET 'http://127.0.0.1:6000/api/fs/write?path=<community_id:filename>&file=<path/to/file/locally>'

@@ -11,6 +11,7 @@ import (
 
 	"github.com/eagraf/habitat-node/client"
 	"github.com/eagraf/habitat-node/entities"
+	"github.com/rs/zerolog/log"
 )
 
 // Session is a logged in user
@@ -21,7 +22,7 @@ type Session struct {
 }
 
 // Permission is either
-// 1. a string list of all users with access (Acess Control List) or
+// 1. a string list of all users with accesxs (Acess Control List) or
 // 2. a bool where its existence indicates that all users have access (value doesn't matter)
 type Permission interface {
 	isPerm()
@@ -107,7 +108,8 @@ func ParseFilePath(path string) (entities.CommunityID, string, error) {
 	}
 
 	arr := strings.Split(path, ":")
-	fmt.Println("comm: ", arr[0], " path ", arr[1])
+
+	log.Debug().Str("comm", arr[0]).Str("path", arr[1]).Msg("parsing file path")
 
 	if len(arr) < 2 {
 		return "", "", errors.New("invalid path format")
@@ -218,21 +220,21 @@ func (fs *FilesystemService) ParseListFiles(w http.ResponseWriter, r *http.Reque
 
 	commid, filepath, err := fs.DoChecksSimple(args)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error().Err(err).Msg("")
 		return
 	}
 
 	// how to get community backnet from user
 	net, err := fs.backnetFromCommID(commid)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("")
 		return
 	}
 
 	err = net.ListFiles(filepath)
 
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("")
 		return
 	}
 
@@ -245,28 +247,28 @@ func (fs *FilesystemService) ParseWrites(w http.ResponseWriter, r *http.Request)
 
 	commid, filepath, err := fs.DoChecksSimple(args)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("")
 		return
 	}
 
 	fname := args.Get("file")
 	file, err := os.Open(fname)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error().Err(err).Msg("")
 		return
 	}
 
 	// how to get community backnet from user
 	net, err := fs.backnetFromCommID(commid)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("")
 		return
 	}
 
 	err = net.Write(filepath, file)
 
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("")
 		return
 	}
 
@@ -279,7 +281,7 @@ func (fs *FilesystemService) ParsePinActions(w http.ResponseWriter, r *http.Requ
 
 	commid, filepath, err := fs.DoChecksSimple(args)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("")
 		return
 	}
 
@@ -288,7 +290,7 @@ func (fs *FilesystemService) ParsePinActions(w http.ResponseWriter, r *http.Requ
 	// how to get community backnet from user
 	net, err := fs.backnetFromCommID(commid)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("")
 		return
 	}
 
@@ -302,7 +304,7 @@ func (fs *FilesystemService) ParsePinActions(w http.ResponseWriter, r *http.Requ
 	}
 
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("")
 		return
 	}
 
@@ -315,7 +317,7 @@ func (fs *FilesystemService) ParseRemoves(w http.ResponseWriter, r *http.Request
 
 	commid, filepath, err := fs.DoChecksSimple(args)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("")
 		return
 	}
 
@@ -328,14 +330,14 @@ func (fs *FilesystemService) ParseRemoves(w http.ResponseWriter, r *http.Request
 	// how to get community backnet from user
 	net, err := fs.backnetFromCommID(commid)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("")
 		return
 	}
 
 	err = net.Remove(filepath, bool(isdir))
 
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("")
 		return
 	}
 
@@ -348,23 +350,23 @@ func (fs *FilesystemService) ParseCats(w http.ResponseWriter, r *http.Request) {
 
 	commid, filepath, err := fs.DoChecksSimple(args)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("")
 		return
 	}
 
 	// how to get community backnet from user
 	net, err := fs.backnetFromCommID(commid)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("")
 		return
 	}
 
 	res, err := net.Cat(filepath)
 
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("")
 	} else {
-		fmt.Println(string(res))
+		log.Debug().Str("res", string(res)).Msg(("in ParseCars"))
 	}
 
 }
@@ -376,44 +378,44 @@ func (fs *FilesystemService) ParseMoves(w http.ResponseWriter, r *http.Request) 
 
 	oldpath := args.Get("old")
 	if oldpath == "" {
-		fmt.Println("oldpath cannot be an empty argument")
+		log.Warn().Msg("oldpath cannot be an empty argument")
 		return
 	}
 
 	newpath := args.Get("new")
 	if newpath == "" {
-		fmt.Println("newpath cannot be an empty argument")
+		log.Warn().Msg("newpath cannot be an empty argument")
 		return
 	}
 
 	oldcommID, oldfilepath, err := ParseFilePath(oldpath)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error().Err(err).Msg("")
 		return
 	}
 
 	newcommID, newfilepath, err := ParseFilePath(newpath)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error().Err(err).Msg("")
 		return
 	}
 
 	if oldcommID != newcommID {
-		fmt.Println("cannot move files between communities (yet!)")
+		log.Warn().Msg("cannot move files between communities (yet!)")
 		return
 	}
 
 	// how to get community backnet from user
 	net, err := fs.backnetFromCommID(oldcommID)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("")
 		return
 	}
 
 	err = net.Move(oldfilepath, newfilepath)
 
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("")
 	}
 }
 
@@ -424,43 +426,43 @@ func (fs *FilesystemService) ParseCopys(w http.ResponseWriter, r *http.Request) 
 
 	oldpath := args.Get("old")
 	if oldpath == "" {
-		fmt.Println("oldpath cannot be an empty argument")
+		log.Warn().Msg("oldpath cannot be an empty argument")
 	}
 
 	newpath := args.Get("new")
 	if newpath == "" {
-		fmt.Println("newpath cannot be an empty argument")
+		log.Warn().Msg("newpath cannot be an empty argument")
 		return
 	}
 
 	oldcommID, oldfilepath, err := ParseFilePath(oldpath)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error().Err(err).Msg("")
 		return
 	}
 
 	newcommID, newfilepath, err := ParseFilePath(newpath)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error().Err(err).Msg("")
 		return
 	}
 
 	if oldcommID != newcommID {
-		fmt.Println("cannot move files between communities (yet!)")
+		log.Warn().Msg("cannot move files between communities (yet!)")
 		return
 	}
 
 	// how to get community backnet from user
 	net, err := fs.backnetFromCommID(oldcommID)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("")
 		return
 	}
 
 	err = net.Copy(oldfilepath, newfilepath)
 
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("")
 	}
 }
 
@@ -471,21 +473,21 @@ func (fs *FilesystemService) ParseMkdirs(w http.ResponseWriter, r *http.Request)
 
 	commid, filepath, err := fs.DoChecksSimple(args)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("")
 		return
 	}
 
 	// how to get community backnet from user
 	net, err := fs.backnetFromCommID(commid)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("")
 		return
 	}
 
 	err = net.MakeDir(filepath)
 
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("")
 	}
 
 }
