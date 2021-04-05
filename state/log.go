@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/eagraf/habitat-node/entities"
+	"github.com/eagraf/habitat-node/entities/transitions"
 )
 
 // The log is a sequence of serialized base64 encoded JSON objects, with each line being one object
@@ -25,7 +26,7 @@ type Log struct {
 }
 
 type Entry struct {
-	Transition *entities.TransitionWrapper
+	Transition *transitions.TransitionWrapper
 
 	SequenceNumber int64     `json:"sequence_number"`
 	Committed      time.Time `json:"committed"`
@@ -44,7 +45,7 @@ func NewLog(path string) (*Log, error) {
 }
 
 // WriteAhead appends to the log file. This method should be called before anything else is done to process state
-func (l *Log) WriteAhead(transition *entities.TransitionWrapper) error {
+func (l *Log) WriteAhead(transition *transitions.TransitionWrapper) error {
 	// Wrap transition in log entry
 	entry := &Entry{
 		Transition:     transition,

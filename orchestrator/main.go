@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/eagraf/habitat-node/entities"
+	"github.com/eagraf/habitat-node/entities/transitions"
 	"github.com/eagraf/habitat-node/orchestrator/processes"
 )
 
@@ -50,7 +51,7 @@ func main() {
 
 	time.Sleep(10 * time.Second)
 
-	m.Receive(entities.AddCommunityTransition{
+	m.Receive(transitions.AddCommunityTransition{
 		Community: &entities.Community{
 			ID: entities.CommunityID("community_2"),
 			Backnet: &entities.Backnet{

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/eagraf/habitat-node/entities"
+	"github.com/eagraf/habitat-node/entities/transitions"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,26 +18,26 @@ func TestWriteAhead(t *testing.T) {
 		CurSequenceNumber: 0,
 	}
 
-	transition1 := &entities.TransitionWrapper{
-		Type: entities.AddCommunityTransitionType,
-		Transition: entities.AddCommunityTransition{
+	transition1 := &transitions.TransitionWrapper{
+		Type: transitions.AddCommunityTransitionType,
+		Transition: transitions.AddCommunityTransition{
 			Community: &entities.Community{
 				Name: "my_community",
 			},
 		},
 	}
 
-	transition2 := &entities.TransitionWrapper{
-		Type: entities.UpdateBacknetTransitionType,
-		Transition: entities.UpdateBacknetTransition{
+	transition2 := &transitions.TransitionWrapper{
+		Type: transitions.UpdateBacknetTransitionType,
+		Transition: transitions.UpdateBacknetTransition{
 			OldCommunity: &entities.Community{},
 			NewCommunity: &entities.Community{},
 		},
 	}
 
-	transition3 := &entities.TransitionWrapper{
-		Type: entities.AddCommunityTransitionType,
-		Transition: entities.AddCommunityTransition{
+	transition3 := &transitions.TransitionWrapper{
+		Type: transitions.AddCommunityTransitionType,
+		Transition: transitions.AddCommunityTransition{
 			Community: &entities.Community{
 				Name: "community_2",
 			},

@@ -1,9 +1,12 @@
 package state
 
-import "github.com/eagraf/habitat-node/entities"
+import (
+	"github.com/eagraf/habitat-node/entities"
+	"github.com/eagraf/habitat-node/entities/transitions"
+)
 
 type StateMachine interface {
-	Apply(transition entities.CommunityTransition) error
+	Apply(transition transitions.CommunityTransition) error
 }
 
 type CommunityStateMachine struct {
@@ -15,6 +18,6 @@ type CommunityStateMachine struct {
 type HostStateMachine struct {
 }
 
-func (sm *CommunityStateMachine) Apply(transition entities.CommunityTransition) error {
+func (sm *CommunityStateMachine) Apply(transition transitions.CommunityTransition) error {
 	return nil
 }

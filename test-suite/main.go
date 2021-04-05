@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/eagraf/habitat-node/entities"
+	"github.com/eagraf/habitat-node/entities/transitions"
 	"github.com/eagraf/habitat-node/orchestrator/processes"
 )
 
@@ -17,7 +18,7 @@ const (
 )
 
 type Sequence struct {
-	Transitions []*entities.TransitionWrapper `json:"transitions"`
+	Transitions []*transitions.TransitionWrapper `json:"transitions"`
 }
 
 func main() {
@@ -40,7 +41,7 @@ func main() {
 		panic(err)
 	}
 
-	var subscriber entities.TransitionSubscriber
+	var subscriber transitions.TransitionSubscriber
 	switch subscriberType {
 	case ProcessManagerSubscriber:
 		state := entities.InitState()
