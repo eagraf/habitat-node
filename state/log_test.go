@@ -30,8 +30,8 @@ func TestWriteAhead(t *testing.T) {
 	transition2 := &transitions.TransitionWrapper{
 		Type: transitions.UpdateBacknetTransitionType,
 		Transition: transitions.UpdateBacknetTransition{
-			OldCommunity: &entities.Community{},
-			NewCommunity: &entities.Community{},
+			OldBacknet: &entities.Backnet{},
+			NewBacknet: &entities.Backnet{},
 		},
 	}
 
