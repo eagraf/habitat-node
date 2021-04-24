@@ -212,7 +212,7 @@ func (fs *FilesystemService) GetBacknetFromRequest(args url.Values) (Backnet, er
 }
 */
 
-// ParseListFiles prints out the list of files and returns
+// ParseListFiles prints out the list of files and returns it
 func (fs *FilesystemService) ParseListFiles(w http.ResponseWriter, r *http.Request) {
 
 	args := GetRequestQueries(r)
@@ -221,6 +221,8 @@ func (fs *FilesystemService) ParseListFiles(w http.ResponseWriter, r *http.Reque
 	commid, filepath, err := fs.DoChecksSimple(args)
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -228,16 +230,22 @@ func (fs *FilesystemService) ParseListFiles(w http.ResponseWriter, r *http.Reque
 	net, err := fs.backnetFromCommID(commid)
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
-	err = net.ListFiles(filepath)
+	res, err := net.ListFiles(filepath)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
+	w.WriteHeader(200)
+	w.Write(res)
 }
 
 // ParseWrites handles requests to write files
@@ -248,6 +256,8 @@ func (fs *FilesystemService) ParseWrites(w http.ResponseWriter, r *http.Request)
 	commid, filepath, err := fs.DoChecksSimple(args)
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -255,6 +265,8 @@ func (fs *FilesystemService) ParseWrites(w http.ResponseWriter, r *http.Request)
 	file, err := os.Open(fname)
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -262,16 +274,22 @@ func (fs *FilesystemService) ParseWrites(w http.ResponseWriter, r *http.Request)
 	net, err := fs.backnetFromCommID(commid)
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
-	err = net.Write(filepath, file)
+	res, err := net.Write(filepath, file)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
+	w.WriteHeader(200)
+	w.Write(res)
 }
 
 // ParsePinActions handles checks for is pins, pinning and unpinning
@@ -282,6 +300,8 @@ func (fs *FilesystemService) ParsePinActions(w http.ResponseWriter, r *http.Requ
 	commid, filepath, err := fs.DoChecksSimple(args)
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -291,22 +311,30 @@ func (fs *FilesystemService) ParsePinActions(w http.ResponseWriter, r *http.Requ
 	net, err := fs.backnetFromCommID(commid)
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
+	var res []byte
 	switch action {
 	case "check":
 		_, err = net.IsPinned(filepath)
 	case "pin":
-		err = net.Pin(filepath)
+		res, err = net.Pin(filepath)
 	case "unpin":
-		err = net.Unpin(filepath)
+		res, err = net.Unpin(filepath)
 	}
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
+
+	w.WriteHeader(200)
+	w.Write(res)
 
 }
 
@@ -318,6 +346,8 @@ func (fs *FilesystemService) ParseRemoves(w http.ResponseWriter, r *http.Request
 	commid, filepath, err := fs.DoChecksSimple(args)
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -331,15 +361,23 @@ func (fs *FilesystemService) ParseRemoves(w http.ResponseWriter, r *http.Request
 	net, err := fs.backnetFromCommID(commid)
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
-	err = net.Remove(filepath, bool(isdir))
+	res, err := net.Remove(filepath, bool(isdir))
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
+
+	w.WriteHeader(200)
+	w.Write(res)
+	return
 
 }
 
@@ -351,6 +389,8 @@ func (fs *FilesystemService) ParseCats(w http.ResponseWriter, r *http.Request) {
 	commid, filepath, err := fs.DoChecksSimple(args)
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -358,6 +398,8 @@ func (fs *FilesystemService) ParseCats(w http.ResponseWriter, r *http.Request) {
 	net, err := fs.backnetFromCommID(commid)
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -365,9 +407,15 @@ func (fs *FilesystemService) ParseCats(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
+		return
 	} else {
 		log.Debug().Str("res", string(res)).Msg(("in ParseCars"))
 	}
+
+	w.WriteHeader(200)
+	w.Write(res)
 
 }
 
@@ -379,29 +427,39 @@ func (fs *FilesystemService) ParseMoves(w http.ResponseWriter, r *http.Request) 
 	oldpath := args.Get("old")
 	if oldpath == "" {
 		log.Warn().Msg("oldpath cannot be an empty argument")
+		w.WriteHeader(200)
+		w.Write([]byte("oldpath cannot be an empty argument"))
 		return
 	}
 
 	newpath := args.Get("new")
 	if newpath == "" {
 		log.Warn().Msg("newpath cannot be an empty argument")
+		w.WriteHeader(200)
+		w.Write([]byte("newpath cannot be an empty argument"))
 		return
 	}
 
 	oldcommID, oldfilepath, err := ParseFilePath(oldpath)
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
 	newcommID, newfilepath, err := ParseFilePath(newpath)
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
 	if oldcommID != newcommID {
 		log.Warn().Msg("cannot move files between communities (yet!)")
+		w.WriteHeader(200)
+		w.Write([]byte("cannot move files between communities (yet!)"))
 		return
 	}
 
@@ -409,14 +467,21 @@ func (fs *FilesystemService) ParseMoves(w http.ResponseWriter, r *http.Request) 
 	net, err := fs.backnetFromCommID(oldcommID)
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
-	err = net.Move(oldfilepath, newfilepath)
+	res, err := net.Move(oldfilepath, newfilepath)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
+		return
 	}
+	w.WriteHeader(200)
+	w.Write(res)
 }
 
 // ParseCopys handles requests to copy files
@@ -427,28 +492,39 @@ func (fs *FilesystemService) ParseCopys(w http.ResponseWriter, r *http.Request) 
 	oldpath := args.Get("old")
 	if oldpath == "" {
 		log.Warn().Msg("oldpath cannot be an empty argument")
+		w.WriteHeader(200)
+		w.Write([]byte("oldpath cannot be an empty argument"))
+		return
 	}
 
 	newpath := args.Get("new")
 	if newpath == "" {
 		log.Warn().Msg("newpath cannot be an empty argument")
+		w.WriteHeader(200)
+		w.Write([]byte("newpath cannot be an empty argument"))
 		return
 	}
 
 	oldcommID, oldfilepath, err := ParseFilePath(oldpath)
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
 	newcommID, newfilepath, err := ParseFilePath(newpath)
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
 	if oldcommID != newcommID {
 		log.Warn().Msg("cannot move files between communities (yet!)")
+		w.WriteHeader(200)
+		w.Write([]byte("cannot move files between communities (yet!)"))
 		return
 	}
 
@@ -456,14 +532,18 @@ func (fs *FilesystemService) ParseCopys(w http.ResponseWriter, r *http.Request) 
 	net, err := fs.backnetFromCommID(oldcommID)
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
-	err = net.Copy(oldfilepath, newfilepath)
+	res, err := net.Copy(oldfilepath, newfilepath)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	}
+	w.WriteHeader(200)
+	w.Write(res)
 }
 
 // ParseMkdirs handles requests to make a new directory
@@ -474,6 +554,8 @@ func (fs *FilesystemService) ParseMkdirs(w http.ResponseWriter, r *http.Request)
 	commid, filepath, err := fs.DoChecksSimple(args)
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -481,13 +563,21 @@ func (fs *FilesystemService) ParseMkdirs(w http.ResponseWriter, r *http.Request)
 	net, err := fs.backnetFromCommID(commid)
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
-	err = net.MakeDir(filepath)
+	res, err := net.MakeDir(filepath)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		w.WriteHeader(200)
+		w.Write([]byte(err.Error()))
+		return
 	}
+
+	w.WriteHeader(200)
+	w.Write(res)
 
 }

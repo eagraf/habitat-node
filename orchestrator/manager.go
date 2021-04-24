@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/eagraf/habitat-node/app"
 	"github.com/eagraf/habitat-node/client"
 	"github.com/eagraf/habitat-node/entities"
 	"github.com/eagraf/habitat-node/fs"
@@ -93,6 +94,7 @@ func (pm *processManager) start(state *entities.State) error {
 	// is go the right way to kick off these processes?
 	go cli.RunClient()
 	go fs.RunFilesystem(cli.GetAuthService(), state, apiports, nets)
+	go app.RunCLI("127.0.0.1:6000", "")
 
 	return nil
 }
