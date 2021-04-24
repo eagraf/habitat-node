@@ -21,16 +21,16 @@ import (
 // most of these should just take in a string path = <community_id>:<path_to_file>
 type Backnet interface {
 	IsPinned(string) (bool, error)
-	Pin(string) error
-	Unpin(string) error
+	Pin(string) ([]byte, error)
+	Unpin(string) ([]byte, error)
 
-	ListFiles(string) error
-	Remove(string, bool) error // bool = indicator of directory or file
+	ListFiles(string) ([]byte, error)
+	Remove(string, bool) ([]byte, error) // bool = indicator of directory or file
 	Cat(string) ([]byte, error)
-	Write(string, *os.File) error
-	Move(string, string) error
-	Copy(string, string) error
-	MakeDir(string) error
+	Write(string, *os.File) ([]byte, error)
+	Move(string, string) ([]byte, error)
+	Copy(string, string) ([]byte, error)
+	MakeDir(string) ([]byte, error)
 }
 
 // IPFSBacknet implements these methods for an IPFS node
@@ -227,12 +227,12 @@ func (net *IPFSBacknet) IsPinned(filepath string) (bool, error) {
 }
 
 // Pin implements pinning files locally for IPFS
-func (net *IPFSBacknet) Pin(filepath string) error {
+func (net *IPFSBacknet) Pin(filepath string) ([]byte, error) {
 
 	fmt.Println("filepath ", filepath)
 	hash, err := net.getHash(filepath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	fmt.Println("hash ", hash)
@@ -252,31 +252,31 @@ func (net *IPFSBacknet) Pin(filepath string) error {
 	)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	bytes, err := ioutil.ReadAll(res.Body)
 	log.Debug().Str("response body", string(bytes)).Msg("Pin")
-	return nil
+	return bytes, nil
 }
 
 // Unpin implements unpinning a local file for IPFS
 // Pin implements pinning files locally for IPFS
-func (net *IPFSBacknet) Unpin(filepath string) error {
+func (net *IPFSBacknet) Unpin(filepath string) ([]byte, error) {
 
 	isPin, err := net.IsPinned(filepath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if isPin == false {
-		return errors.New("this file or directory has never been pinned")
+		return nil, errors.New("this file or directory has never been pinned")
 	}
 
 	// fmt.Println(isPin)
 	hash, err := net.getHash(filepath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	argmap := map[string]string{"arg": hash}
@@ -293,16 +293,16 @@ func (net *IPFSBacknet) Unpin(filepath string) error {
 	)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	bytes, err := ioutil.ReadAll(res.Body)
 	log.Debug().Str("response body", string(bytes)).Msg("UnPin")
-	return nil
+	return bytes, nil
 }
 
 // ListFiles implements ls for IPFSBacknets
-func (net *IPFSBacknet) ListFiles(filepath string) error {
+func (net *IPFSBacknet) ListFiles(filepath string) ([]byte, error) {
 
 	// fmt.Print("list files called on path ", filepath, "\n")
 	argmap := map[string]string{}
@@ -325,16 +325,16 @@ func (net *IPFSBacknet) ListFiles(filepath string) error {
 	)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	bytes, err := ioutil.ReadAll(res.Body)
 	log.Debug().Str("response body", string(bytes)).Msg("ListFiles")
-	return nil
+	return bytes, nil
 }
 
 // Remove implements rm for IPFSBacknets
-func (net *IPFSBacknet) Remove(filepath string, isdir bool) error {
+func (net *IPFSBacknet) Remove(filepath string, isdir bool) ([]byte, error) {
 
 	argmap := map[string]string{"arg": filepath}
 	if isdir == true {
@@ -353,12 +353,12 @@ func (net *IPFSBacknet) Remove(filepath string, isdir bool) error {
 	)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	bytes, err := ioutil.ReadAll(res.Body)
 	log.Debug().Str("response body", string(bytes)).Msg("Remove")
-	return nil
+	return bytes, nil
 }
 
 // Cat implements cat for IFPSBacknets
@@ -392,7 +392,7 @@ func (net *IPFSBacknet) Cat(filepath string) ([]byte, error) {
 }
 
 // Write implements writing/updating files for IPFSBacknets
-func (net *IPFSBacknet) Write(filepath string, f *os.File) error {
+func (net *IPFSBacknet) Write(filepath string, f *os.File) ([]byte, error) {
 
 	argmap := map[string]string{"arg": filepath, "create": "true", "parents": "true"}
 	q := url.Values{}
@@ -408,17 +408,17 @@ func (net *IPFSBacknet) Write(filepath string, f *os.File) error {
 	)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	bytes, err := ioutil.ReadAll(res.Body)
 	log.Debug().Str("response body", string(bytes)).Msg("Write")
-	return nil
+	return bytes, nil
 }
 
 // Move implements mv for IPFSBacknets
 // this needs to be tewsted bc online it says there are two arguments called arg for both
-func (net *IPFSBacknet) Move(oldpath string, newpath string) error {
+func (net *IPFSBacknet) Move(oldpath string, newpath string) ([]byte, error) {
 
 	q := url.Values{}
 	q.Add("arg", oldpath)
@@ -432,17 +432,17 @@ func (net *IPFSBacknet) Move(oldpath string, newpath string) error {
 	)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	bytes, err := ioutil.ReadAll(res.Body)
 	log.Debug().Str("response body", string(bytes)).Msg("Move")
-	return nil
+	return bytes, nil
 }
 
 // Copy implements cp for IPFSBacknets
 // Also needs to be check/architecture needs to be modified
-func (net *IPFSBacknet) Copy(oldpath string, newpath string) error {
+func (net *IPFSBacknet) Copy(oldpath string, newpath string) ([]byte, error) {
 
 	q := url.Values{}
 	q.Add("arg", oldpath)
@@ -456,16 +456,16 @@ func (net *IPFSBacknet) Copy(oldpath string, newpath string) error {
 	)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	bytes, err := ioutil.ReadAll(res.Body)
 	log.Debug().Str("response body", string(bytes)).Msg("Copy")
-	return nil
+	return bytes, nil
 }
 
 // MakeDir implements mkdir for IPFSBacknets
-func (net *IPFSBacknet) MakeDir(dirpath string) error {
+func (net *IPFSBacknet) MakeDir(dirpath string) ([]byte, error) {
 
 	q := url.Values{}
 	q.Set("arg", dirpath)
@@ -478,10 +478,10 @@ func (net *IPFSBacknet) MakeDir(dirpath string) error {
 	)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	bytes, err := ioutil.ReadAll(res.Body)
 	log.Debug().Str("response body", string(bytes)).Msg("MakeDir")
-	return nil
+	return bytes, nil
 }
