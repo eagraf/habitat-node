@@ -4,7 +4,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -21,8 +23,12 @@ type LogCollection struct {
 }
 
 type Log struct {
-	LogWriter         io.Writer
 	CurSequenceNumber int64
+	Path              string
+
+	logReader io.Reader
+	logWriter io.Writer
+	mutex     *sync.Mutex
 }
 
 type Entry struct {
@@ -39,8 +45,11 @@ func NewLog(path string) (*Log, error) {
 	}
 
 	return &Log{
-		LogWriter:         walWriter,
 		CurSequenceNumber: 0,
+		Path:              path,
+
+		logWriter: walWriter,
+		mutex:     &sync.Mutex{},
 	}, nil
 }
 
@@ -62,14 +71,39 @@ func (l *Log) WriteAhead(transition *transitions.TransitionWrapper) error {
 	// Base64 encode
 	encoding := base64.StdEncoding.EncodeToString(buf)
 
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+
 	// Append to log file
-	_, err = l.LogWriter.Write([]byte(encoding + "\n"))
+	_, err = l.logWriter.Write([]byte(encoding + "\n"))
 	if err != nil {
 		return err
 	}
 	l.CurSequenceNumber += 1
 
 	return nil
+}
+
+func (l *Log) GetEntries() ([]*Entry, error) {
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+
+	bytes, err := ioutil.ReadFile(l.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	encodedEntries := strings.Split(string(bytes), "\n")
+	res := make([]*Entry, len(encodedEntries))
+	for i, encodedEntry := range encodedEntries {
+		entry, err := DecodeLogEntry([]byte(encodedEntry))
+		if err != nil {
+			return nil, err
+		}
+		res[i] = entry
+	}
+
+	return res, nil
 }
 
 // Helper functions for dealing with the WAL
@@ -92,12 +126,9 @@ func DecodeLogEntry(entry []byte) (*Entry, error) {
 type WALWriter struct {
 	logPath string
 	logFile *os.File
-	mutex   *sync.Mutex
 }
 
 func (ww *WALWriter) Write(buf []byte) (int, error) {
-	ww.mutex.Lock()
-
 	n, err := ww.logFile.Write(buf)
 	if err != nil {
 		return n, err
@@ -109,13 +140,12 @@ func (ww *WALWriter) Write(buf []byte) (int, error) {
 		return n, err
 	}
 
-	ww.mutex.Unlock()
-
 	return n, nil
 }
 
 func NewWALWriter(path string) (*WALWriter, error) {
 	// The WAL is kept as a persistently open append and write only file
+	// TODO look into getting a system level lock on this file
 	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return nil, err
@@ -124,6 +154,5 @@ func NewWALWriter(path string) (*WALWriter, error) {
 	return &WALWriter{
 		logPath: path,
 		logFile: file,
-		mutex:   &sync.Mutex{},
 	}, nil
 }

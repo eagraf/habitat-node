@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/eagraf/habitat-node/entities"
@@ -14,8 +15,9 @@ import (
 func TestWriteAhead(t *testing.T) {
 	writer := bytes.Buffer{}
 	log := &Log{
-		LogWriter:         &writer,
 		CurSequenceNumber: 0,
+		logWriter:         &writer,
+		mutex:             &sync.Mutex{},
 	}
 
 	transition1 := &transitions.TransitionWrapper{
