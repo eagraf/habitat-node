@@ -3,9 +3,11 @@ package state
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -23,7 +25,7 @@ type LogCollection struct {
 }
 
 type Log struct {
-	CurSequenceNumber int64
+	CurSequenceNumber uint64
 	Path              string
 
 	logReader io.Reader
@@ -34,7 +36,7 @@ type Log struct {
 type Entry struct {
 	Transition *transitions.TransitionWrapper
 
-	SequenceNumber int64     `json:"sequence_number"`
+	SequenceNumber uint64    `json:"sequence_number"`
 	Committed      time.Time `json:"committed"`
 }
 
@@ -71,11 +73,13 @@ func (l *Log) WriteAhead(transition *transitions.TransitionWrapper) error {
 	// Base64 encode
 	encoding := base64.StdEncoding.EncodeToString(buf)
 
+	logLine := fmt.Sprintf("%d %s\n", l.CurSequenceNumber, encoding)
+
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 
 	// Append to log file
-	_, err = l.logWriter.Write([]byte(encoding + "\n"))
+	_, err = l.logWriter.Write([]byte(logLine))
 	if err != nil {
 		return err
 	}
@@ -109,7 +113,12 @@ func (l *Log) GetEntries() ([]*Entry, error) {
 // Helper functions for dealing with the WAL
 
 func DecodeLogEntry(entry []byte) (*Entry, error) {
-	decoded, err := base64.StdEncoding.DecodeString(string(entry))
+	parts := strings.Split(string(entry), " ")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("there should be 2 parts in log line, got %d instead", len(parts))
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(parts[1])
 	if err != nil {
 		return nil, err
 	}
@@ -118,6 +127,14 @@ func DecodeLogEntry(entry []byte) (*Entry, error) {
 	err = json.Unmarshal(decoded, unmarshalled)
 	if err != nil {
 		return nil, err
+	}
+
+	sequenceNumber, err := strconv.ParseUint(parts[0], 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	if sequenceNumber != unmarshalled.SequenceNumber {
+		return nil, fmt.Errorf("sequence number and encoded sequence number do not match %d != %d", sequenceNumber, unmarshalled.SequenceNumber)
 	}
 
 	return unmarshalled, nil

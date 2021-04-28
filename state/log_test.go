@@ -2,7 +2,6 @@ package state
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 	"sync"
 	"testing"
@@ -68,10 +67,9 @@ func TestWriteAhead(t *testing.T) {
 	entries := strings.Split(res, "\n")
 	for i, entry := range entries {
 		if len(entry) != 0 {
-			fmt.Println(len(entry))
 			decoded, err := DecodeLogEntry([]byte(entry))
 			assert.Nil(t, err)
-			assert.Equal(t, int64(i), decoded.SequenceNumber)
+			assert.Equal(t, uint64(i), decoded.SequenceNumber)
 		}
 	}
 }
