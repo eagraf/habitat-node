@@ -10,11 +10,13 @@ import (
 	"github.com/eagraf/habitat-node/entities"
 	"github.com/eagraf/habitat-node/entities/transitions"
 	"github.com/eagraf/habitat-node/orchestrator/processes"
+	"github.com/eagraf/habitat-node/state"
 )
 
 // subscriber types
 const (
 	ProcessManagerSubscriber string = "process_manager"
+	CommunityStateMachine    string = "community_state_machine"
 )
 
 type Sequence struct {
@@ -59,6 +61,33 @@ func (s *TransitionSubscriberSequencer) Stop() error {
 	return nil
 }
 
+type StateMachineSequencer struct {
+	machine     state.StateMachine
+	machineType string
+}
+
+func (s *StateMachineSequencer) Start() error {
+	switch s.machineType {
+	case CommunityStateMachine:
+		machine, err := state.InitCommunityStateMachine("community_0", os.Getenv("STATE_DIR"))
+		if err != nil {
+			return err
+		}
+		s.machine = machine
+	default:
+		return fmt.Errorf("state machine type %s not supported", s.machineType)
+	}
+	return nil
+}
+
+func (s *StateMachineSequencer) Next(transition transitions.Transition) error {
+	return s.machine.Apply(transition.(transitions.CommunityTransition))
+}
+
+func (s *StateMachineSequencer) Stop() error {
+	return nil
+}
+
 func main() {
 
 	if len(os.Args) != 3 {
@@ -84,6 +113,10 @@ func main() {
 	case ProcessManagerSubscriber:
 		sequencer = &TransitionSubscriberSequencer{
 			subscriberType: sequencerType,
+		}
+	case CommunityStateMachine:
+		sequencer = &StateMachineSequencer{
+			machineType: sequencerType,
 		}
 	}
 

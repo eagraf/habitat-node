@@ -56,6 +56,7 @@ func NewLog(path string) (*Log, error) {
 }
 
 // WriteAhead appends to the log file. This method should be called before anything else is done to process state
+// TODO AHJEWIOGJEIOJGIOEWJGIOEJNDWGIOJNEIO sequence number should be passed and should match cur sequence number ajewoigjnweoigf
 func (l *Log) WriteAhead(transition *transitions.TransitionWrapper) error {
 	// Wrap transition in log entry
 	entry := &Entry{
