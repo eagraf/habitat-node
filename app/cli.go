@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/eagraf/habitat-node/fslib"
+	"github.com/eagraf/habitat-node/fs/fslib"
 	"github.com/rs/zerolog/log"
 )
 
@@ -28,6 +28,12 @@ func RunCLI(fsapi string, commapi string) {
 
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Print("Welcome to habitat node!\n% ")
+	wd, err := os.Getwd()
+	if err != nil {
+		fmt.Printf(err.Error())
+		os.Exit(255)
+	}
+	fmt.Print("Running from " + wd)
 	for scanner.Scan() {
 		cmd := scanner.Text()
 		if len(cmd) == 0 {
@@ -77,7 +83,7 @@ func CommRoute(cmd []string) {
 
 func FsRoute(fs fslib.FSLibConfig, cmd []string) {
 	if len(cmd) < 1 {
-		log.Error().Err(errors.New("No subroute provided")).Msg("")
+		fmt.Printf("Error: bad command - no subroute provided")
 		return
 	}
 	log.Debug().Str("command", cmd[0]).Msg("FsRoute")
@@ -90,9 +96,9 @@ func FsRoute(fs fslib.FSLibConfig, cmd []string) {
 		}
 		res, err := fs.Ls(cmd[1])
 		if err != nil {
-			log.Info().Str("LS Response", res)
+			fmt.Printf(err.Error())
 		} else {
-			log.Error().Err(err)
+			fmt.Printf(res + "\n")
 		}
 
 	case "write":
@@ -102,9 +108,9 @@ func FsRoute(fs fslib.FSLibConfig, cmd []string) {
 		}
 		res, err := fs.Write(cmd[1], cmd[2])
 		if err != nil {
-			log.Info().Str("Write Response", res)
+			fmt.Printf(err.Error())
 		} else {
-			log.Error().Err(err)
+			fmt.Printf(res + "\n")
 		}
 
 	case "pin":
@@ -114,69 +120,70 @@ func FsRoute(fs fslib.FSLibConfig, cmd []string) {
 		}
 		res, err := fs.Pin(cmd[1], cmd[2])
 		if err != nil {
-			log.Info().Str("Pin Response", res)
+			fmt.Printf(err.Error())
 		} else {
-			log.Error().Err(err)
+			fmt.Printf(res + "\n")
 		}
 
 	case "remove":
 		if len(cmd) < 2 {
-			log.Error().Err(errors.New("Not enough arguments provided")).Msg("")
+			fmt.Printf(errors.New("Not enough arguments provided").Error())
 			return
 		}
 		res, err := fs.Remove(cmd[1])
 		if err != nil {
-			log.Info().Str("Remove Response", res)
+			fmt.Printf(err.Error())
 		} else {
-			log.Error().Err(err)
+			fmt.Printf(res + "\n")
 		}
 
 	case "cat":
 		if len(cmd) < 2 {
-			log.Error().Err(errors.New("Not enough arguments provided")).Msg("")
+			fmt.Printf(errors.New("Not enough arguments provided").Error())
 			return
 		}
 		res, err := fs.Cat(cmd[1])
 		if err != nil {
-			log.Info().Str("Cat Response", res)
+			fmt.Printf(err.Error())
 		} else {
-			log.Error().Err(err)
+			fmt.Printf(res + "\n")
 		}
 
 	case "move":
 		if len(cmd) < 3 {
-			log.Error().Err(errors.New("Not enough arguments provided")).Msg("")
+			fmt.Printf(errors.New("Not enough arguments provided").Error())
 			return
 		}
 		res, err := fs.Move(cmd[1], cmd[2])
 		if err != nil {
-			log.Info().Str("Move Response", res)
+			fmt.Printf(err.Error())
 		} else {
-			log.Error().Err(err)
+			fmt.Printf(res + "\n")
 		}
 
 	case "copy":
 		if len(cmd) < 3 {
-			log.Error().Err(errors.New("Not enough arguments provided")).Msg("")
+			fmt.Printf(errors.New("Not enough arguments provided").Error())
 			return
 		}
+		fmt.Printf("1 %s 2 %s\n", cmd[1], cmd[2])
 		res, err := fs.Copy(cmd[1], cmd[2])
 		if err != nil {
-			log.Info().Str("Copy Response", res)
+			fmt.Printf(err.Error())
 		} else {
-			log.Error().Err(err)
+			fmt.Printf(res + "\n")
 		}
 
 	case "mkdir":
 		if len(cmd) < 2 {
-			log.Error().Err(errors.New("Not enough arguments provided")).Msg("")
+			fmt.Printf(errors.New("Not enough arguments provided").Error())
 			return
 		}
 		res, err := fs.Mkdir(cmd[1])
 		if err != nil {
-			log.Info().Str("Mkdir Response", res)
+			fmt.Printf(err.Error())
 		} else {
-			log.Error().Err(err)
+			fmt.Printf(res + "\n")
 		}
 
 	default:

@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/eagraf/habitat-node/entities"
 	"github.com/rs/zerolog/log"
@@ -173,13 +174,11 @@ type PinListResponse2 struct {
 // IsPinned checks if a file is pinned on the users computer
 func (net *IPFSBacknet) IsPinned(filepath string) (bool, error) {
 
-	// fmt.Println("filepath ", filepath)
 	hash, err := net.getHash(filepath)
 	if err != nil {
 		return false, err
 	}
 
-	// dir, _ := filepath.Split(path)
 	argmap := map[string]string{"arg": hash}
 	q := url.Values{}
 	for arg, val := range argmap {
@@ -208,7 +207,7 @@ func (net *IPFSBacknet) IsPinned(filepath string) (bool, error) {
 		return false, err
 	}
 	if resBodyUnfoundJSON.Message != "" {
-		fmt.Println(resBodyUnfoundJSON.Message)
+		// fmt.Println(resBodyUnfoundJSON.Message)
 		return false, nil
 	}
 
@@ -218,31 +217,30 @@ func (net *IPFSBacknet) IsPinned(filepath string) (bool, error) {
 
 	log.Debug().Str("resBody", string(resBody)).Str("hash", hash).Msg("IsPinned")
 	if _, found := keys[hash]; found {
-		fmt.Println("found pin for ", filepath)
 		return true, nil
 	}
-	fmt.Println("DID NOT find pin for ", filepath)
+
 	return false, nil
 
+}
+
+type PinResponse struct {
+	Pins []string `json:"Pins"`
 }
 
 // Pin implements pinning files locally for IPFS
 func (net *IPFSBacknet) Pin(filepath string) ([]byte, error) {
 
-	fmt.Println("filepath ", filepath)
 	hash, err := net.getHash(filepath)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println("hash ", hash)
 	argmap := map[string]string{"arg": hash}
 	q := url.Values{}
 	for arg, val := range argmap {
 		q.Set(arg, val)
 	}
-
-	fmt.Println("q", q)
 
 	res, err := IPFSAPICall(
 		net.api,
@@ -255,9 +253,26 @@ func (net *IPFSBacknet) Pin(filepath string) ([]byte, error) {
 		return nil, err
 	}
 
-	bytes, err := ioutil.ReadAll(res.Body)
-	log.Debug().Str("response body", string(bytes)).Msg("Pin")
-	return bytes, nil
+	resBody, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debug().Str("response body", string(resBody)).Msg("Pin")
+
+	var resBodyJSON PinResponse
+	err = json.Unmarshal(resBody, &resBodyJSON)
+	if err != nil {
+		return nil, err
+	}
+
+	// bytes, err := ioutil.ReadAll(res.Body)
+	log.Debug().Str("response body", string(resBody)).Msg("Pin")
+	return []byte(resBodyJSON.Pins[0]), nil
+}
+
+type UnPinResponse struct {
+	Pins []string `json:"Pins"`
 }
 
 // Unpin implements unpinning a local file for IPFS
@@ -273,7 +288,6 @@ func (net *IPFSBacknet) Unpin(filepath string) ([]byte, error) {
 		return nil, errors.New("this file or directory has never been pinned")
 	}
 
-	// fmt.Println(isPin)
 	hash, err := net.getHash(filepath)
 	if err != nil {
 		return nil, err
@@ -296,15 +310,38 @@ func (net *IPFSBacknet) Unpin(filepath string) ([]byte, error) {
 		return nil, err
 	}
 
-	bytes, err := ioutil.ReadAll(res.Body)
-	log.Debug().Str("response body", string(bytes)).Msg("UnPin")
-	return bytes, nil
+	resBody, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	log.Debug().Str("response body", string(resBody)).Msg("UnPin")
+
+	var resBodyJSON UnPinResponse
+	err = json.Unmarshal(resBody, &resBodyJSON)
+	if err != nil {
+		return nil, err
+	}
+
+	// bytes, err := ioutil.ReadAll(res.Body)
+	return []byte(resBodyJSON.Pins[0]), nil
+}
+
+type Entries struct {
+	Hash string `json:"Hash"`
+	Name string `json:"Name"`
+	Size int64  `json:"Size"`
+	Type int    `json:"Type"`
+}
+
+// PinListResponse is
+// the json response should be this according to the API but it's not ....
+type LsResponse struct {
+	Entries []Entries `json:"Entries"`
 }
 
 // ListFiles implements ls for IPFSBacknets
 func (net *IPFSBacknet) ListFiles(filepath string) ([]byte, error) {
 
-	// fmt.Print("list files called on path ", filepath, "\n")
 	argmap := map[string]string{}
 	if filepath != "" {
 		argmap = map[string]string{"arg": filepath}
@@ -314,8 +351,6 @@ func (net *IPFSBacknet) ListFiles(filepath string) ([]byte, error) {
 	for arg, val := range argmap {
 		q.Set(arg, val)
 	}
-
-	fmt.Print(net.api, "\n")
 
 	res, err := IPFSAPICall(
 		net.api,
@@ -328,9 +363,25 @@ func (net *IPFSBacknet) ListFiles(filepath string) ([]byte, error) {
 		return nil, err
 	}
 
-	bytes, err := ioutil.ReadAll(res.Body)
-	log.Debug().Str("response body", string(bytes)).Msg("ListFiles")
-	return bytes, nil
+	resBody, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var resBodyJSON LsResponse
+	err = json.Unmarshal(resBody, &resBodyJSON)
+	if err != nil {
+		return nil, err
+	}
+
+	// bytes, err := ioutil.ReadAll(res.Body)
+	log.Debug().Str("response body", string(resBody)).Msg("List")
+	var entries []string
+	for _, e := range resBodyJSON.Entries {
+		entries = append(entries, string(e.Name))
+	}
+	restr := strings.Join(entries, ", ")
+	return []byte(restr), nil
 }
 
 // Remove implements rm for IPFSBacknets

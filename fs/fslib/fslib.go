@@ -89,10 +89,10 @@ func (fs FSLibConfig) Move(old string, new string) (string, error) {
 	return FSAPICall(fs.FSapi, "api/fs/move", args, nil)
 }
 
-func (fs FSLibConfig) Copy(old string, new string) (string, error) {
+func (fs FSLibConfig) Copy(old string, news string) (string, error) {
 	args := url.Values{}
 	args.Set("old", old)
-	args.Set("new", new)
+	args.Set("new", news)
 	return FSAPICall(fs.FSapi, "api/fs/copy", args, nil)
 }
 
