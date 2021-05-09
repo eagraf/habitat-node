@@ -2,7 +2,6 @@ package fs
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -99,12 +98,12 @@ func GetRequestQueries(r *http.Request) url.Values {
 // if it is in the format <community_id>:<file_path> returns community_id, file_path
 // else it returns error
 func ParseFilePath(path string) (entities.CommunityID, string, error) {
-	fmt.Print("path to parse ", path, "\n")
+	// fmt.Print("path to parse ", path, "\n")
 
 	tomatch := `[a-zA-Z0-9_-]*:/*[^/]*.*`
 
 	if ok, _ := regexp.MatchString(tomatch, path); !ok {
-		return "", "", errors.New("the given path did not pass regex")
+		return "", "", errors.New("the given path did not pass regex: must be <community_name>:/<path to file>")
 	}
 
 	arr := strings.Split(path, ":")
@@ -317,9 +316,15 @@ func (fs *FilesystemService) ParsePinActions(w http.ResponseWriter, r *http.Requ
 	}
 
 	var res []byte
+	var ispin bool
 	switch action {
 	case "check":
-		_, err = net.IsPinned(filepath)
+		ispin, err = net.IsPinned(filepath)
+		if ispin {
+			res = []byte("pinned")
+		} else {
+			res = []byte("not pinned")
+		}
 	case "pin":
 		res, err = net.Pin(filepath)
 	case "unpin":
