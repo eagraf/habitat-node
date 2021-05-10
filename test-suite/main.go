@@ -81,7 +81,9 @@ func (s *StateMachineSequencer) Start() error {
 }
 
 func (s *StateMachineSequencer) Next(transition transitions.Transition) error {
-	return s.machine.Apply(transition.(transitions.CommunityTransition))
+	err := s.machine.Apply(transition.(transitions.CommunityTransition))
+	fmt.Printf("%v\n", s.machine.GetState())
+	return err
 }
 
 func (s *StateMachineSequencer) Stop() error {
