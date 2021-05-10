@@ -12,6 +12,7 @@ import (
 type StateMachine interface {
 	Restart() error
 	Apply(transition transitions.CommunityTransition) error
+	GetState() interface{}
 	// TODO snapshot
 }
 
@@ -113,4 +114,8 @@ func (sm *CommunityStateMachine) Apply(transition transitions.CommunityTransitio
 	// TODO notify all transition subscribers
 
 	return nil
+}
+
+func (sm *CommunityStateMachine) GetState() interface{} {
+	return sm.State
 }
