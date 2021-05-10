@@ -101,6 +101,13 @@ func (sm *CommunityStateMachine) Restart() error {
 }
 
 func (sm *CommunityStateMachine) Apply(transition transitions.CommunityTransition) error {
+	// Write to write ahead log
+	wrapper := &transitions.TransitionWrapper{
+		Type:       transition.Type(),
+		Transition: transition,
+	}
+	sm.WriteAheadLog.WriteAhead(wrapper)
+
 	// Apply reducer to state
 	newState, err := transition.Reduce(sm.State)
 	if err != nil {
