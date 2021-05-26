@@ -3,8 +3,12 @@ package state
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/eagraf/habitat-node/entities/transitions"
@@ -13,11 +17,11 @@ import (
 type Snapshot struct {
 	DataB64        string                                     `json:"data"`
 	Type           transitions.TransitionSubscriptionCategory `json:"type"`
-	SequenceNumber int                                        `json:"sequence_number"`
+	SequenceNumber uint64                                     `json:"sequence_number"`
 	Timestamp      time.Time                                  `json:"timestamp"`
 }
 
-func WriteSnapshot(writer io.Writer, data interface{}, sequenceNumber int) error {
+func WriteSnapshot(writer io.Writer, data interface{}, sequenceNumber uint64) error {
 	// Data is stored as base 64 encoded JSON
 	marshalled, err := json.Marshal(data)
 	if err != nil {
@@ -73,4 +77,36 @@ func ReadSnapshot(reader io.Reader, dest interface{}) (*Snapshot, error) {
 	}
 
 	return &snapshot, nil
+}
+
+// Helper function to copy snapshot file to permanent version with timestamped name
+func ArchiveSnapshotFile(path string, sequenceNumber int) error {
+	oldFilePath := filepath.Join(path, "snapshot")
+	newFilePath := filepath.Join(path, fmt.Sprintf("snapshot-%s-%s", strconv.Itoa(sequenceNumber), strconv.Itoa(int(time.Now().Unix()))))
+
+	_, err := os.Stat(oldFilePath)
+	if os.IsNotExist(err) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	oldFile, err := os.Open(oldFilePath)
+	if err != nil {
+		return err
+	}
+	defer oldFile.Close()
+
+	newFile, err := os.OpenFile(newFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer newFile.Close()
+
+	_, err = io.Copy(newFile, oldFile)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

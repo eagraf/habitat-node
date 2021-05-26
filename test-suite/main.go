@@ -69,7 +69,7 @@ type StateMachineSequencer struct {
 func (s *StateMachineSequencer) Start() error {
 	switch s.machineType {
 	case CommunityStateMachine:
-		machine, err := state.InitCommunityStateMachine("community_0", os.Getenv("STATE_DIR"))
+		machine, err := state.InitCommunityStateMachine("community_0", os.Getenv("STATE_DIR"), 2)
 		if err != nil {
 			return err
 		}

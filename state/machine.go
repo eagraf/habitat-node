@@ -7,6 +7,7 @@ import (
 
 	"github.com/eagraf/habitat-node/entities"
 	"github.com/eagraf/habitat-node/entities/transitions"
+	"github.com/rs/zerolog/log"
 )
 
 type StateMachine interface {
@@ -17,17 +18,18 @@ type StateMachine interface {
 }
 
 type CommunityStateMachine struct {
-	CommunityID   entities.CommunityID
-	WriteAheadLog *Log
-	State         *entities.Community
-	Path          string
+	CommunityID      entities.CommunityID
+	WriteAheadLog    *Log
+	State            *entities.Community
+	Path             string
+	SnapshotInterval int
 }
 
 type HostStateMachine struct {
 }
 
 // InitCommunityStateMachine gets ready for a restart or for a clean start
-func InitCommunityStateMachine(communityID entities.CommunityID, stateBaseDir string) (*CommunityStateMachine, error) {
+func InitCommunityStateMachine(communityID entities.CommunityID, stateBaseDir string, snapshotInterval int) (*CommunityStateMachine, error) {
 	stateDir := filepath.Join(stateBaseDir, string(communityID))
 
 	// Check if state machine dir exists
@@ -52,9 +54,10 @@ func InitCommunityStateMachine(communityID entities.CommunityID, stateBaseDir st
 
 	// The state variable is not reconstituted just yet
 	return &CommunityStateMachine{
-		CommunityID:   communityID,
-		WriteAheadLog: log,
-		Path:          stateDir,
+		CommunityID:      communityID,
+		WriteAheadLog:    log,
+		Path:             stateDir,
+		SnapshotInterval: snapshotInterval,
 	}, nil
 }
 
@@ -117,6 +120,22 @@ func (sm *CommunityStateMachine) Apply(transition transitions.CommunityTransitio
 	sm.State = newState
 
 	// TODO snapshot if needed
+	// Copy snapshot file
+	if sm.WriteAheadLog.CurSequenceNumber%uint64(sm.SnapshotInterval) == 0 {
+		err := ArchiveSnapshotFile(sm.Path, sm.SnapshotInterval)
+		if err != nil {
+			log.Error().Msg(err.Error())
+		}
+		snapshotPath := filepath.Join(sm.Path, "snapshot")
+		snapshotFile, err := os.OpenFile(snapshotPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Error().Msg(err.Error())
+		}
+		err = WriteSnapshot(snapshotFile, sm.State, sm.WriteAheadLog.CurSequenceNumber)
+		if err != nil {
+			return err
+		}
+	}
 
 	// TODO notify all transition subscribers
 
