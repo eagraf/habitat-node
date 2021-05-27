@@ -14,15 +14,15 @@ func (ac AddCommunityTransition) Type() TransitionType {
 	return AddCommunityTransitionType
 }
 
-func (ac AddCommunityTransition) Reduce(state *entities.State) (*entities.State, error) {
-	newState := *state
-	if _, ok := state.Communities[ac.Community.ID]; ok {
-		return nil, fmt.Errorf("community with id %s is already in state", ac.Community.ID)
+func (ac AddCommunityTransition) Reduce(oldHost *entities.Host) (*entities.Host, error) {
+	newHost, err := oldHost.Copy()
+	if err != nil {
+		return nil, err
 	}
-	newState.Communities[ac.Community.ID] = ac.Community
-	return &newState, nil
-}
 
-func (ac AddCommunityTransition) CommunityID() entities.CommunityID {
-	return ac.Community.ID
+	if _, ok := newHost.Communities[ac.Community.ID]; ok {
+		return nil, fmt.Errorf("community with id %s is already in host", ac.Community.ID)
+	}
+	newHost.Communities[ac.Community.ID] = ac.Community
+	return newHost, nil
 }
