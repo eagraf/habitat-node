@@ -1,9 +1,10 @@
-package entities
+package transitions
 
 import (
 	"encoding/json"
 	"testing"
 
+	"github.com/eagraf/habitat-node/entities"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,8 +31,8 @@ func TestUnmarshalTransitionWrapper(t *testing.T) {
 }
 
 func TestAddCommunity(t *testing.T) {
-	state := InitState()
-	community := InitCommunity("community_0", "My Community", IPFS)
+	state := entities.InitState()
+	community := entities.InitCommunity("community_0", "My Community", entities.IPFS)
 
 	transition := AddCommunityTransition{
 		Community: community,
@@ -43,13 +44,13 @@ func TestAddCommunity(t *testing.T) {
 }
 
 func TestUpdateBacknet(t *testing.T) {
-	state := InitState()
-	oldCommunity := InitCommunity("community_0", "My Community", IPFS)
+	state := entities.InitState()
+	oldCommunity := entities.InitCommunity("community_0", "My Community", entities.IPFS)
 	oldCommunity.Backnet.Bootstrap = []string{"boostrap1", "bootstrap2"}
 	oldCommunity.Backnet.Local.PortMap = map[string]int{"swarm": 4001, "api": 4002, "gateway": 4003}
 	state.Communities["community_0"] = oldCommunity
 
-	newCommunity := InitCommunity("community_0", "My Community", IPFS)
+	newCommunity := entities.InitCommunity("community_0", "My Community", entities.IPFS)
 	newCommunity.Backnet.Bootstrap = []string{"boostrap1", "bootstrap2", "bootstrap3"}
 	newCommunity.Backnet.Local.PortMap = map[string]int{"swarm": 4004, "api": 4005, "gateway": 4006}
 
@@ -72,7 +73,7 @@ func TestUpdateBacknet(t *testing.T) {
 	newCommunity.ID = "community_0"
 
 	// Test attempt to change backnet type
-	newCommunity.Backnet.Type = DAT
+	newCommunity.Backnet.Type = entities.DAT
 	_, err = transition.Reduce(state)
 	assert.NotNil(t, err)
 }

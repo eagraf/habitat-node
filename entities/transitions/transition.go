@@ -1,4 +1,4 @@
-package entities
+package transitions
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/eagraf/habitat-node/entities"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -44,7 +45,7 @@ var transitionSubscriptionCategories = map[TransitionType]TransitionSubscription
 // Each state transition is implemented via a reducer function
 type Transition interface {
 	Type() TransitionType
-	Reduce(*State) (*State, error)
+	Reduce(*entities.State) (*entities.State, error)
 	// TODO we might need to implement rollbacks as well
 	// TODO we might need to add a validate method
 }
@@ -102,7 +103,7 @@ func (tw *TransitionWrapper) UnmarshalJSON(bytes []byte) error {
 // CommunityTransition is a transition to a community element in state
 type CommunityTransition interface {
 	Transition
-	CommunityID() CommunityID
+	CommunityID() entities.CommunityID
 }
 
 // HostUserTransition is a transition to a host user element in state
@@ -128,14 +129,14 @@ func GetSubscriptionCategory(transitionType TransitionType) (TransitionSubscript
 // Host transitions are initiated by a user on the host node
 
 type AddCommunityTransition struct {
-	Community *Community `json:"community"`
+	Community *entities.Community `json:"community"`
 }
 
 func (ac AddCommunityTransition) Type() TransitionType {
 	return AddCommunityTransitionType
 }
 
-func (ac AddCommunityTransition) Reduce(state *State) (*State, error) {
+func (ac AddCommunityTransition) Reduce(state *entities.State) (*entities.State, error) {
 	newState := *state
 	if _, ok := state.Communities[ac.Community.ID]; ok {
 		return nil, fmt.Errorf("community with id %s is already in state", ac.Community.ID)
@@ -144,22 +145,22 @@ func (ac AddCommunityTransition) Reduce(state *State) (*State, error) {
 	return &newState, nil
 }
 
-func (ac AddCommunityTransition) CommunityID() CommunityID {
+func (ac AddCommunityTransition) CommunityID() entities.CommunityID {
 	return ac.Community.ID
 }
 
 // Within community transitions are agreed upon by consensus between community member nodes
 
 type AddMemberTransition struct {
-	Community CommunityID `json:"community_id"`
-	User      *User       `json:"user`
+	Community entities.CommunityID `json:"community_id"`
+	User      *entities.User       `json:"user`
 }
 
 func (am AddMemberTransition) Type() TransitionType {
 	return AddMemberTransitionType
 }
 
-func (am AddMemberTransition) Reduce(state *State) (*State, error) {
+func (am AddMemberTransition) Reduce(state *entities.State) (*entities.State, error) {
 	newState := *state
 	if _, ok := state.Communities[am.Community]; !ok {
 		return nil, fmt.Errorf("no community with id %s in state", am.Community)
@@ -171,20 +172,20 @@ func (am AddMemberTransition) Reduce(state *State) (*State, error) {
 	return &newState, nil
 }
 
-func (am AddMemberTransition) CommunityID() CommunityID {
+func (am AddMemberTransition) CommunityID() entities.CommunityID {
 	return am.Community
 }
 
 type UpdateBacknetTransition struct {
-	OldCommunity *Community `json:"old_community" mapstructure:"old_community"`
-	NewCommunity *Community `json:"old_community" mapstructure:"old_community"`
+	OldCommunity *entities.Community `json:"old_community" mapstructure:"old_community"`
+	NewCommunity *entities.Community `json:"new_community" mapstructure:"new_community"`
 }
 
 func (ub UpdateBacknetTransition) Type() TransitionType {
 	return UpdateBacknetTransitionType
 }
 
-func (ub UpdateBacknetTransition) Reduce(state *State) (*State, error) {
+func (ub UpdateBacknetTransition) Reduce(state *entities.State) (*entities.State, error) {
 	newState := *state
 	if _, ok := state.Communities[ub.OldCommunity.ID]; !ok {
 		return nil, fmt.Errorf("no community with id %s in state", ub.OldCommunity.ID)
