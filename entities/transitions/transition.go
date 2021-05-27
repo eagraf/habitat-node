@@ -15,12 +15,14 @@ type TransitionType string
 
 // All possible TransitionTypes
 const (
+	InitCommunityTransitionType TransitionType = "INIT_COMMUNITY"
 	AddCommunityTransitionType  TransitionType = "ADD_COMMUNITY"
 	AddMemberTransitionType     TransitionType = "ADD_MEMBER"
 	UpdateBacknetTransitionType TransitionType = "UPDATE_BACKNET"
 )
 
 var transitionReflectionTypeRegistry = map[TransitionType]reflect.Type{
+	InitCommunityTransitionType: reflect.TypeOf(InitCommunityTransition{}),
 	AddCommunityTransitionType:  reflect.TypeOf(AddCommunityTransition{}),
 	AddMemberTransitionType:     reflect.TypeOf(AddMemberTransition{}),
 	UpdateBacknetTransitionType: reflect.TypeOf(UpdateBacknetTransition{}),
@@ -37,7 +39,8 @@ const (
 )
 
 var transitionSubscriptionCategories = map[TransitionType]TransitionSubscriptionCategory{
-	AddCommunityTransitionType:  CommunityCategory,
+	InitCommunityTransitionType: CommunityCategory,
+	AddCommunityTransitionType:  HostCategory,
 	AddMemberTransitionType:     CommunityCategory,
 	UpdateBacknetTransitionType: CommunityCategory,
 }
