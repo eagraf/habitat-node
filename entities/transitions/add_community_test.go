@@ -8,14 +8,14 @@ import (
 )
 
 func TestAddCommunity(t *testing.T) {
-	state := entities.InitState()
+	host := entities.InitHost()
 	community := entities.InitCommunity("community_0", "My Community", entities.IPFS)
 
 	transition := AddCommunityTransition{
 		Community: community,
 	}
 
-	_, err := transition.Reduce(state)
+	newHost, err := transition.Reduce(host)
 	assert.Nil(t, err)
-	assert.Equal(t, 1, len(state.Communities))
+	assert.Equal(t, 1, len(newHost.Communities))
 }
