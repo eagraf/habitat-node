@@ -1,5 +1,7 @@
 package entities
 
+import "encoding/json"
+
 // CommunityID identifies a Community
 type CommunityID string
 
@@ -22,4 +24,22 @@ func InitCommunity(id CommunityID, name string, backnetType BacknetType) *Commun
 		Backnet: InitBacknet(backnetType),
 		Apps:    make([]*AppID, 0),
 	}
+}
+
+func (c *Community) Copy() (*Community, error) {
+	// dirty trick for copying: just marshal and unmarshal.
+	// if performance is a huge issue, we can eventually create real copy methods
+
+	marshalled, err := json.Marshal(c)
+	if err != nil {
+		return nil, err
+	}
+
+	var copy Community
+	err = json.Unmarshal(marshalled, &copy)
+	if err != nil {
+		return nil, err
+	}
+
+	return &copy, err
 }
