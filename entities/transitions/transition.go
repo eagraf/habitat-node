@@ -60,7 +60,9 @@ type HostUserTransition interface {
 	Reduce(*entities.HostUser) (*entities.HostUser, error)
 }
 
-type HostTransition interface{}
+type HostTransition interface {
+	Reduce(*entities.Host) (*entities.Host, error)
+}
 
 // TransitionWrapper adds type information to a transition in marshalled form
 type TransitionWrapper struct {

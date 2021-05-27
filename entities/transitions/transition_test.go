@@ -26,5 +26,5 @@ func TestUnmarshalTransitionWrapper(t *testing.T) {
 
 	act, ok := tw.Transition.(*AddCommunityTransition)
 	assert.Equal(t, true, ok)
-	assert.Equal(t, "community_0", string(act.CommunityID()))
+	assert.Equal(t, "community_0", string(act.Community.ID))
 }
