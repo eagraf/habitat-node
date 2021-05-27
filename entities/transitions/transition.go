@@ -32,6 +32,7 @@ type TransitionSubscriptionCategory string
 // All possible TransitionSubscriptionCategories
 const (
 	CommunityCategory TransitionSubscriptionCategory = "COMMUNITY"
+	HostCategory      TransitionSubscriptionCategory = "HOST"
 	HostUserCategory  TransitionSubscriptionCategory = "HOST_USER"
 )
 
