@@ -52,16 +52,19 @@ type Transition interface {
 }
 
 type CommunityTransition interface {
+	Transition
 	Reduce(*entities.Community) (*entities.Community, error)
 	//Rollback(*entities.Community) (*entities.Community, error)
 	CommunityID() entities.CommunityID
 }
 
 type HostUserTransition interface {
+	Transition
 	Reduce(*entities.HostUser) (*entities.HostUser, error)
 }
 
 type HostTransition interface {
+	Transition
 	Reduce(*entities.Host) (*entities.Host, error)
 }
 
