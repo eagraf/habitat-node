@@ -9,6 +9,7 @@ import (
 	"github.com/eagraf/habitat-node/app"
 	"github.com/eagraf/habitat-node/client"
 	"github.com/eagraf/habitat-node/entities"
+	"github.com/eagraf/habitat-node/entities/transitions"
 	"github.com/eagraf/habitat-node/fs"
 	"github.com/rs/zerolog/log"
 )
@@ -136,11 +137,11 @@ func (pm *ProcessManager) startBacknet(community *entities.Community) (Backnet, 
 }
 
 // Receive implements TransitionSubscriber
-func (pm *ProcessManager) Receive(transition entities.Transition) error {
+func (pm *ProcessManager) Receive(transition transitions.Transition) error {
 	switch transition.Type() {
-	case entities.AddCommunityTransitionType:
+	case transitions.AddCommunityTransitionType:
 		log.Info().Msgf("received ADD_COMMUNITY transition")
-		addCommunityTransition, ok := transition.(*entities.AddCommunityTransition)
+		addCommunityTransition, ok := transition.(*transitions.AddCommunityTransition)
 		if !ok {
 			return errors.New("transition is not type AddCommunityTransition")
 		}
@@ -150,9 +151,9 @@ func (pm *ProcessManager) Receive(transition entities.Transition) error {
 		if err != nil {
 			return err
 		}
-	case entities.UpdateBacknetTransitionType:
+	case transitions.UpdateBacknetTransitionType:
 		log.Info().Msgf("received UPDATE_BACKNET transition")
-		updateBacknetTransition, ok := transition.(*entities.UpdateBacknetTransition)
+		updateBacknetTransition, ok := transition.(*transitions.UpdateBacknetTransition)
 		if !ok {
 			return errors.New("transition is not type UpdateBacknetTransition")
 		}
