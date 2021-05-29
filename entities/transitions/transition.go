@@ -73,8 +73,9 @@ type HostTransition interface {
 
 // TransitionWrapper adds type information to a transition in marshalled form
 type TransitionWrapper struct {
-	Type       TransitionType `json:"type"`
-	Transition Transition     `json:"transition"`
+	Type           TransitionType `json:"type"`
+	Transition     Transition     `json:"transition"`
+	SequenceNumber uint64         `json:"sequence_number"`
 }
 
 // UnmarhsalJSON uses reflection to extract the proper Transition type from a TransitionWrapper JSON
@@ -117,6 +118,7 @@ func (tw *TransitionWrapper) UnmarshalJSON(bytes []byte) error {
 	if !ok {
 		return errors.New("unmarshalled struct is not a Transition interface")
 	}
+	tw.SequenceNumber = uint64(firstPass["sequence_number"].(float64))
 
 	return nil
 }
