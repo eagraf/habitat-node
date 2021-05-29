@@ -159,12 +159,12 @@ func (pm *ProcessManager) Receive(transition transitions.Transition) error {
 		}
 
 		// stop current backnet process if it is running
-		communityID := updateBacknetTransition.OldCommunity.ID
+		communityID := updateBacknetTransition.CommunityID()
 		backnet := pm.backnets[communityID]
 		pm.processes[backnet.ProcessID()].cancel()
 
 		// reconfigure backnet
-		err := backnet.Configure(updateBacknetTransition.NewCommunity.Backnet)
+		err := backnet.Configure(updateBacknetTransition.NewBacknet)
 		if err != nil {
 			// TODO restart with old configuration? or rollback?
 			return fmt.Errorf("failed to reconfigure process: %s", err.Error())
