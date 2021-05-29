@@ -45,10 +45,22 @@ var transitionSubscriptionCategories = map[TransitionType]TransitionSubscription
 // Each state transition is implemented via a reducer function
 type Transition interface {
 	Type() TransitionType
-	Reduce(*entities.State) (*entities.State, error)
+	//Reduce(*entities.State) (*entities.State, error)
 	// TODO we might need to implement rollbacks as well
 	// TODO we might need to add a validate method
 }
+
+type CommunityTransition interface {
+	Reduce(*entities.Community) (*entities.Community, error)
+	//Rollback(*entities.Community) (*entities.Community, error)
+	CommunityID() entities.CommunityID
+}
+
+type HostUserTransition interface {
+	Reduce(*entities.HostUser) (*entities.HostUser, error)
+}
+
+type HostTransition interface{}
 
 // TransitionWrapper adds type information to a transition in marshalled form
 type TransitionWrapper struct {
@@ -98,18 +110,6 @@ func (tw *TransitionWrapper) UnmarshalJSON(bytes []byte) error {
 	}
 
 	return nil
-}
-
-// CommunityTransition is a transition to a community element in state
-type CommunityTransition interface {
-	Transition
-	CommunityID() entities.CommunityID
-}
-
-// HostUserTransition is a transition to a host user element in state
-type HostUserTransition interface {
-	Transition
-	HostUsername() string
 }
 
 // TransitionSubscriber receives state transitions from a state monitoring process

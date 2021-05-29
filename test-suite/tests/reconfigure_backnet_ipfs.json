@@ -24,33 +24,26 @@
         {
             "type": "UPDATE_BACKNET",
             "transition": {
-                "old_community": {
-                    "id": "community_0",
-                    "name": "my community",
-                    "backnet": {
-                        "type": "ipfs",
-                        "bootstrap": [],
-                        "local_backnet_config": {
-                            "port_map": {
-                                "swarm": 4001,
-                                "api": 4002,
-                                "gateway": 4003
-                            }
+                "community_id": "community_0",
+                "old_backnet": {
+                    "type": "ipfs",
+                    "bootstrap": [],
+                    "local_backnet_config": {
+                        "port_map": {
+                            "swarm": 4001,
+                            "api": 4002,
+                            "gateway": 4003
                         }
                     }
                 },
-                "new_community": {
-                    "id": "community_0",
-                    "name": "my community",
-                    "backnet": {
-                        "type": "ipfs",
-                        "bootstrap": [],
-                        "local_backnet_config": {
-                            "port_map": {
-                                "swarm": 4004,
-                                "api": 4005,
-                                "gateway": 4006
-                            }
+                "new_backnet": {
+                    "type": "ipfs",
+                    "bootstrap": [],
+                    "local_backnet_config": {
+                        "port_map": {
+                            "swarm": 4004,
+                            "api": 4005,
+                            "gateway": 4006
                         }
                     }
                 }
