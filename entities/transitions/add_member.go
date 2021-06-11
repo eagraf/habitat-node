@@ -8,7 +8,7 @@ import (
 
 type AddMemberTransition struct {
 	Community entities.CommunityID `json:"community_id"`
-	User      *entities.User       `json:"user`
+	User      *entities.User       `json:"user"`
 }
 
 func (am AddMemberTransition) Type() TransitionType {
