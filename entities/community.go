@@ -1,6 +1,9 @@
 package entities
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"errors"
+)
 
 // CommunityID identifies a Community
 type CommunityID string
@@ -42,4 +45,22 @@ func (c *Community) Copy() (*Community, error) {
 	}
 
 	return &copy, err
+}
+
+func (c *Community) AddMember(u *User) error {
+	if _, ok := c.Members[u.ID]; ok {
+		return errors.New("User already exists in this community!")
+	} else {
+		c.Members[u.ID] = u
+		return nil
+	}
+}
+
+func (c *Community) RemoveMember(u *User) error {
+	if _, ok := c.Members[u.ID]; !ok {
+		return errors.New("User is already not in this community!")
+	} else {
+		delete(c.Members, u.ID)
+		return nil
+	}
 }

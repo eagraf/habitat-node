@@ -15,17 +15,17 @@ type TransitionType string
 
 // All possible TransitionTypes
 const (
-	InitCommunityTransitionType TransitionType = "INIT_COMMUNITY"
-	AddCommunityTransitionType  TransitionType = "ADD_COMMUNITY"
-	AddMemberTransitionType     TransitionType = "ADD_MEMBER"
-	UpdateBacknetTransitionType TransitionType = "UPDATE_BACKNET"
+	InitCommunityTransitionType     TransitionType = "INIT_COMMUNITY"
+	AddCommunityTransitionType      TransitionType = "ADD_COMMUNITY"
+	UpdateBacknetTransitionType     TransitionType = "UPDATE_BACKNET"
+	ModifyCommMembersTransitionType TransitionType = "MODIFY_COMMUNITY_MEMBERS"
 )
 
 var transitionReflectionTypeRegistry = map[TransitionType]reflect.Type{
-	InitCommunityTransitionType: reflect.TypeOf(InitCommunityTransition{}),
-	AddCommunityTransitionType:  reflect.TypeOf(AddCommunityTransition{}),
-	AddMemberTransitionType:     reflect.TypeOf(AddMemberTransition{}),
-	UpdateBacknetTransitionType: reflect.TypeOf(UpdateBacknetTransition{}),
+	InitCommunityTransitionType:     reflect.TypeOf(InitCommunityTransition{}),
+	AddCommunityTransitionType:      reflect.TypeOf(AddCommunityTransition{}),
+	UpdateBacknetTransitionType:     reflect.TypeOf(UpdateBacknetTransition{}),
+	ModifyCommMembersTransitionType: reflect.TypeOf(ModifyCommMembersTransition{}),
 }
 
 // TransitionSubscriptionCategory enumerates different types entities that a TransitionSubscriber could be subscribed to
@@ -39,10 +39,10 @@ const (
 )
 
 var transitionSubscriptionCategories = map[TransitionType]TransitionSubscriptionCategory{
-	InitCommunityTransitionType: CommunityCategory,
-	AddCommunityTransitionType:  HostCategory,
-	AddMemberTransitionType:     CommunityCategory,
-	UpdateBacknetTransitionType: CommunityCategory,
+	InitCommunityTransitionType:     CommunityCategory,
+	AddCommunityTransitionType:      HostCategory,
+	UpdateBacknetTransitionType:     CommunityCategory,
+	ModifyCommMembersTransitionType: CommunityCategory,
 }
 
 // A Transition transitions the state from one arrangement to another
