@@ -19,7 +19,8 @@
                         }
                     }
                 }
-            }
+            },
+            "sequence_number": 1
         },
         {
             "type": "UPDATE_BACKNET",
@@ -47,7 +48,8 @@
                         }
                     }
                 }
-            }
+            },
+            "sequence_number": 2
         }
     ]
 }
