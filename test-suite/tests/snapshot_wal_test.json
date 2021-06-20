@@ -1,0 +1,142 @@
+{
+    "transitions": [
+        {
+            "type": "INIT_COMMUNITY",
+            "transition": {
+                "community": {
+                    "id": "community_0",
+                    "name": "my community",
+                    "backnet": {
+                        "type": "ipfs",
+                        "bootstrap": ["hello"],
+                        "local_backnet_config": {
+                            "hola": "hello",
+                            "port_map": {
+                                "swarm": 4001,
+                                "api": 4002,
+                                "gateway": 4003
+                            }
+                        }
+                    }
+                }
+            },
+            "sequence_number": 1
+        },
+        {
+            "type": "UPDATE_BACKNET",
+            "transition": {
+                "community_id": "community_0",
+                "old_backnet": {
+                    "type": "ipfs",
+                    "bootstrap": [],
+                    "local_backnet_config": {
+                        "port_map": {
+                            "swarm": 4001,
+                            "api": 4002,
+                            "gateway": 4003
+                        }
+                    }
+                },
+                "new_backnet": {
+                    "type": "ipfs",
+                    "bootstrap": [],
+                    "local_backnet_config": {
+                        "port_map": {
+                            "swarm": 4004,
+                            "api": 4005,
+                            "gateway": 4006
+                        }
+                    }
+                }
+            },
+            "sequence_number": 2
+        },
+        {
+            "type": "UPDATE_BACKNET",
+            "transition": {
+                "community_id": "community_0",
+                "old_backnet": {
+                    "type": "ipfs",
+                    "bootstrap": [],
+                    "local_backnet_config": {
+                        "port_map": {
+                            "swarm": 4001,
+                            "api": 4002,
+                            "gateway": 4003
+                        }
+                    }
+                },
+                "new_backnet": {
+                    "type": "ipfs",
+                    "bootstrap": [],
+                    "local_backnet_config": {
+                        "port_map": {
+                            "swarm": 4004,
+                            "api": 4005,
+                            "gateway": 4006
+                        }
+                    }
+                }
+            },
+            "sequence_number": 3
+        },
+        {
+            "type": "UPDATE_BACKNET",
+            "transition": {
+                "community_id": "community_0",
+                "old_backnet": {
+                    "type": "ipfs",
+                    "bootstrap": [],
+                    "local_backnet_config": {
+                        "port_map": {
+                            "swarm": 4001,
+                            "api": 4002,
+                            "gateway": 4003
+                        }
+                    }
+                },
+                "new_backnet": {
+                    "type": "ipfs",
+                    "bootstrap": [],
+                    "local_backnet_config": {
+                        "port_map": {
+                            "swarm": 4004,
+                            "api": 4005,
+                            "gateway": 4006
+                        }
+                    }
+                }
+            },
+            "sequence_number": 4
+        },
+        {
+            "type": "UPDATE_BACKNET",
+            "transition": {
+                "community_id": "community_0",
+                "old_backnet": {
+                    "type": "ipfs",
+                    "bootstrap": [],
+                    "local_backnet_config": {
+                        "port_map": {
+                            "swarm": 4001,
+                            "api": 4002,
+                            "gateway": 4003
+                        }
+                    }
+                },
+                "new_backnet": {
+                    "type": "ipfs",
+                    "bootstrap": [],
+                    "local_backnet_config": {
+                        "port_map": {
+                            "swarm": 4004,
+                            "api": 4005,
+                            "gateway": 4006
+                        }
+                    }
+                }
+            },
+            "sequence_number": 5
+        }
+    ]
+}
