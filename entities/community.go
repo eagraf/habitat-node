@@ -64,3 +64,8 @@ func (c *Community) RemoveMember(u *User) error {
 		return nil
 	}
 }
+
+/*
+Issue: 	we need some notion of "self" in order to know who is initiating these actions
+		since not everyone will have permission to add / remove members
+*/
